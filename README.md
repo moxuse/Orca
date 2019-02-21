@@ -2,7 +2,7 @@
 
 <img src='https://raw.githubusercontent.com/hundredrabbits/Orca/master/resources/logo.png' width="600"/>
 
-**Each letter of the alphabet is an operation**, lowercase letters operate on bang(`*`), uppercase letters operate each frame. Have a look at some project created with [#ORCΛ](https://twitter.com/hashtag/ORCΛ), or some [example files](https://github.com/hundredrabbits/Orca/tree/master/examples). Here's an [introduction video](https://www.youtube.com/watch?v=RaI_TuISSJE). You can see the [design notes](DESIGN.md) for specs and upcoming features. If you need some help, visit the [chatroom](https://talk.lurk.org/channel/orca).
+**Each letter of the alphabet is an operation**, lowercase letters operate on bang(`*`), uppercase letters operate each frame. Have a look at some project created with [#ORCΛ](https://twitter.com/hashtag/ORCΛ), or some [example files](https://github.com/hundredrabbits/Orca/tree/master/examples). Here's an [introduction video](https://www.youtube.com/watch?v=RaI_TuISSJE). You can see the [design notes](DESIGN.md) for specs and upcoming features. If you need some help, visit the [forum](https://llllllll.co/t/orca-live-coding-tool/17689), or the [chatroom](https://talk.lurk.org/channel/orca).
 
 For a portable version of Orca, built entirely in C, visit [Orca-c](http://github.com/hundredrabbits/Orca-c).
 
@@ -21,37 +21,37 @@ npm start
 
 ## Operators
 
-- `A` **add**(a, b): Outputs the sum of inputs.
-- `B` **bool**(val): Bangs if input is not empty, or 0.
-- `C` **clock**('rate, mod): Outputs a constant value based on the runtime frame.
-- `D` **delay**('rate, mod): Bangs on a fraction of the runtime frame.
+- `A` **add**: Outputs the sum of inputs.
+- `B` **bool**: Bangs if input is not empty, or 0.
+- `C` **clock**: Outputs a constant value based on the runtime frame.
+- `D` **delay**: Bangs on a fraction of the runtime frame.
 - `E` **east**: Moves eastward, or bangs.
-- `F` **if**(a, b): Bangs if both inputs are equal.
-- `G` **generator**('x, 'y, 'len): Writes distant operators with offset.
+- `F` **if**: Bangs if both inputs are equal.
+- `G` **generator**: Writes distant operators with offset.
 - `H` **halt**: Stops southward operators from operating.
-- `I` **increment**(min, max): Increments southward operator.
-- `J` **jumper**(val): Outputs the northward operator.
-- `K` **konkat**('len): Outputs multiple variables.
-- `L` **loop**('len): Loops a number of eastward operators.
-- `M` **modulo**(val, mod): Outputs the modulo of input.
+- `I` **increment**: Increments southward operator.
+- `J` **jumper**: Outputs the northward operator.
+- `K` **konkat**: Outputs multiple variables.
+- `L` **loop**: Loops a number of eastward operators.
+- `M` **modulo**: Outputs the modulo of input.
 - `N` **north**: Moves Northward, or bangs.
-- `O` **offset**('x, 'y, val): Reads a distant operator with offset.
-- `P` **push**('len, 'key, val): Writes an eastward operator with offset.
-- `Q` **query**('x, 'y, 'len): Reads distant operators with offset.
-- `R` **random**(min, max): Outputs a random value.
+- `O` **offset**: Reads a distant operator with offset.
+- `P` **push**: Writes an eastward operator with offset.
+- `Q` **query**: Reads distant operators with offset.
+- `R` **random**: Outputs a random value.
 - `S` **south**: Moves southward, or bangs.
-- `T` **track**('len, 'key, val): Reads an eastward operator with offset.
-- `U` **uturn**('n, 'e, 's, 'w): Reverses movement of inputs.
-- `V` **variable**('write, read): Reads and write globally available variables.
+- `T` **track**: Reads an eastward operator with offset.
+- `U` **uturn**: Reverses movement of inputs.
+- `V` **variable**: Reads and write globally available variables.
 - `W` **west**: Moves westward, or bangs.
-- `X` **teleport**('x, 'y, val): Writes a distant operator with offset.
-- `Y` **jymper**(val): Outputs the westward operator.
+- `X` **teleport**: Writes a distant operator with offset.
+- `Y` **jymper**: Outputs the westward operator.
 - `Z` **zoom**: Moves eastwardly, respawns west on collision.
 - `*` **bang**: Bangs neighboring operators.
 - `#` **comment**: Comments a line, or characters until the next hash.
-- `:` **midi**('channel, 'octave, 'note, velocity, length): Sends a MIDI note.
+- `:` **midi**: Sends a MIDI note.
 - `;` **udp**: Sends a UDP message.
-- `=` **osc**(path): Sends a OSC message.
+- `=` **osc**: Sends a OSC message.
 
 ## Controls
 
@@ -108,6 +108,14 @@ In console, type `terminal.io.midi.list()` to see the list of available midi dev
 
 In console, type `terminal.io.midi.select(1)` to select the second midi device.
 
+#### Using MIDI beat clock instead of the built in clock
+
+Orca comes with its own internal clock but you can configure it to receive its clock signal from a MIDI input.
+Press `Ctrl+Space` to cycle through available clocks (built in or MIDI inputs).
+The MIDI clock listens for the START and STOP signals from the midi device to run.
+
+*Warning*: Note length when using the MIDI clock is currently based on note length at 120 BPM.
+
 ## UDP
 
 The [UDP](https://nodejs.org/api/dgram.html#dgram_socket_send_msg_offset_length_port_address_callback) operator `;` locks each consecutive eastwardly ports. For example, `;hello`, will send the string "hello", on bang, to the port `49160` on `localhost`
@@ -122,7 +130,7 @@ In console, type `terminal.io.udp.select(49160)` to select the **49160** udp por
 
 The [OSC](https://github.com/MylesBorins/node-osc) operator `=` locks each consecutive eastwardly ports. 
 
- First char is used for path, nexts are sent as integers using [base36 Table](https://github.com/hundredrabbits/Orca#base36-table). For example, `=1abc` will send `10`, `11` and `12` to `/1`, via the port `49162` on `localhost`; `=a123` will send `1`, `2` and `3`, to the path `/a`.  You can use the [listener.js](https://github.com/hundredrabbits/Orca/blob/master/examples/listener.js) to test OSC messages. See it in action with [osc.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_osc.orca) or try it with [SonicPi](https://github.com/hundredrabbits/Orca/blob/master/TUTORIAL.md#sonicpi).
+First char is used for path, nexts are sent as integers using [base36 Table](https://github.com/hundredrabbits/Orca#base36-table). For example, `=1abc` will send `10`, `11` and `12` to `/1`, via the port `49162` on `localhost`; `=a123` will send `1`, `2` and `3`, to the path `/a`.  You can use the [listener.js](https://github.com/hundredrabbits/Orca/blob/master/listener.js) to test OSC messages. See it in action with [osc.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_osc.orca) or try it with [SonicPi](https://github.com/hundredrabbits/Orca/blob/master/TUTORIAL.md#sonicpi).
 
 #### Select OSC Port
 

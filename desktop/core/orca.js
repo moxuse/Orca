@@ -3,8 +3,8 @@
 const library = require('./library')
 
 function Orca (terminal, host = null) {
-  this.w = 65 // Default Width
-  this.h = 25 // Default Height
+  this.w = 0 // Default Width
+  this.h = 0 // Default Height
   this.s = '' // String
   this.f = host ? host.f : 0 // Frame
 
@@ -12,8 +12,9 @@ function Orca (terminal, host = null) {
 
   this.terminal = terminal
   this.keys = Object.keys(library).slice(0, 36)
+
   this.locks = []
-  this.ports = {}
+  this.values = {}
   this.runtime = []
 
   this.run = function () {
@@ -95,30 +96,35 @@ function Orca (terminal, host = null) {
     }
   }
 
+  this.bounds = function () {
+    let w = 0
+    let h = 0
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
+        const g = this.glyphAt(x, y)
+        if (g !== '.') {
+          if (x > w) { w = x }
+          if (y > h) { h = y }
+        }
+      }
+    }
+    return { w: w, h: h }
+  }
+
   // Locks
 
   this.release = function () {
-    this.locks = []
+    this.locks = new Array(this.w * this.h)
+    this.values = {}
   }
 
   this.unlock = function (x, y) {
-    const index = this.locks.indexOf(`${x}:${y}`)
-    this.locks.splice(index, 1)
+    this.locks[this.indexAt(x, y)] = null
   }
 
   this.lock = function (x, y) {
     if (this.lockAt(x, y)) { return }
-    this.locks.push(`${x}:${y}`)
-  }
-
-  // IO
-
-  this.input = function (g) {
-    this.write(0, 0, g)
-  }
-
-  this.output = function () {
-    return this.s.charAt(this.s.length - 1)
+    this.locks[this.indexAt(x, y)] = true
   }
 
   // Helpers
@@ -152,7 +158,7 @@ function Orca (terminal, host = null) {
   }
 
   this.lockAt = function (x, y) {
-    return this.locks.indexOf(`${x}:${y}`) > -1
+    return this.locks[this.indexAt(x, y)] === true
   }
 
   // Tools

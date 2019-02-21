@@ -11,7 +11,6 @@ function Keyboard (terminal) {
       event.preventDefault()
       return
     }
-
     if (event.key === 'c' && (event.metaKey || event.ctrlKey)) { terminal.cursor.copy(); event.preventDefault(); return }
     if (event.key === 'x' && (event.metaKey || event.ctrlKey)) { terminal.cursor.cut(); event.preventDefault(); return }
     if (event.key === 'v' && (event.metaKey || event.ctrlKey)) { terminal.cursor.paste(); event.preventDefault(); return }
@@ -29,8 +28,6 @@ function Keyboard (terminal) {
     if (event.metaKey) { return }
     if (event.ctrlKey) { return }
 
-    if (event.key === 'Backquote') { terminal.toggleBackground(); return }
-    if (event.key === 'Tab') { terminal.toggleInterface(); return }
     if (event.key === 'Enter') { terminal.cursor.toggleMode(1); return }
     if (event.key === 'Backspace' || event.key === '.') { terminal.cursor.erase(); return }
     if (event.key === ' ') { terminal.pause(); event.preventDefault(); return }
@@ -54,7 +51,7 @@ function Keyboard (terminal) {
   }
 
   this.onArrowUp = function (mod = false, skip = false, drag = false) {
-    const leap = skip ? terminal.size.grid.h : 1
+    const leap = skip ? terminal.grid.h : 1
     if (drag) {
       terminal.cursor.drag(0, leap)
     } else if (mod) {
@@ -65,7 +62,7 @@ function Keyboard (terminal) {
   }
 
   this.onArrowDown = function (mod = false, skip = false, drag = false) {
-    const leap = skip ? terminal.size.grid.h : 1
+    const leap = skip ? terminal.grid.h : 1
     if (drag) {
       terminal.cursor.drag(0, -leap)
     } else if (mod) {
@@ -76,7 +73,7 @@ function Keyboard (terminal) {
   }
 
   this.onArrowLeft = function (mod = false, skip = false, drag = false) {
-    const leap = skip ? terminal.size.grid.w : 1
+    const leap = skip ? terminal.grid.w : 1
     if (drag) {
       terminal.cursor.drag(-leap, 0)
     } else if (mod) {
@@ -87,7 +84,7 @@ function Keyboard (terminal) {
   }
 
   this.onArrowRight = function (mod = false, skip = false, drag = false) {
-    const leap = skip ? terminal.size.grid.w : 1
+    const leap = skip ? terminal.grid.w : 1
     if (drag) {
       terminal.cursor.drag(leap, 0)
     } else if (mod) {

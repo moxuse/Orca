@@ -1,5 +1,7 @@
 'use strict'
 
+const { clipboard } = require('electron')
+
 function Cursor (terminal) {
   this.x = 0
   this.y = 0
@@ -47,7 +49,13 @@ function Cursor (terminal) {
   }
 
   this.copy = function () {
-    this.block = this.getBlock()
+    const block = this.getBlock()
+    var rows = []
+    for (var i = 0; i < block.length; i++) {
+      rows.push(block[i].join(''))
+    }
+    const result = rows.join('\n')
+    clipboard.writeText(result)
   }
 
   this.cut = function () {
@@ -56,7 +64,7 @@ function Cursor (terminal) {
   }
 
   this.paste = function () {
-    this.writeBlock(this.toRect(), this.block)
+    this.writeBlock(this.toRect(), clipboard.readText().split(/\r?\n/))
   }
 
   this.read = function () {
@@ -72,13 +80,13 @@ function Cursor (terminal) {
     if (this.mode === 1) {
       this.move(1, 0)
     }
-    terminal.history.record()
+    terminal.history.record(terminal.orca.s)
   }
 
   this.erase = function () {
     if (this.w === 1 && this.h === 1 && terminal.orca.glyphAt(this.x, this.y) === '.') { this.move(-1, 0); return } // Backspace Effect
     this.eraseBlock(this.x, this.y, this.w, this.h)
-    terminal.history.record()
+    terminal.history.record(terminal.orca.s)
   }
 
   this.goto = function (str) {
@@ -96,7 +104,7 @@ function Cursor (terminal) {
   this.inspect = function (name = true, ports = false) {
     if (this.w > 1 || this.h > 1) { return 'multi' }
     const port = terminal.portAt(this.x, this.y)
-    if (port) { return `${port.name}` }
+    if (port) { return `${port[3]}` }
     if (terminal.orca.lockAt(this.x, this.y)) { return 'locked' }
     return 'empty'
   }
@@ -126,7 +134,7 @@ function Cursor (terminal) {
       }
       _y++
     }
-    terminal.history.record()
+    terminal.history.record(terminal.orca.s)
   }
 
   this.eraseBlock = function (x, y, w, h) {
@@ -135,7 +143,7 @@ function Cursor (terminal) {
         terminal.orca.write(_x, _y, '.')
       }
     }
-    terminal.history.record()
+    terminal.history.record(terminal.orca.s)
   }
 
   this.toRect = function () {

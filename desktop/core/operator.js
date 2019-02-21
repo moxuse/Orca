@@ -20,6 +20,7 @@ function Operator (orca, x, y, glyph = '.', passive = false) {
 
   this.output = function (g) {
     if (!this.ports.output) { return }
+    if (!g) { return }
     orca.write(this.x + this.ports.output.x, this.y + this.ports.output.y, g)
   }
 
@@ -91,23 +92,28 @@ function Operator (orca, x, y, glyph = '.', passive = false) {
 
   // Docs
 
-  this._ports = function () {
-    let ports = ''
-    if (Object.keys(this.ports.haste).length > 0) {
-      for (const name in this.ports.haste) {
-        ports += `'${name}, `
-      }
+  this.getPorts = function () {
+    const a = []
+    const TYPE = { operator: 0, haste: 1, input: 2, output: 3 }
+    a.push([this.x, this.y, this.passive === true && this.draw === true ? TYPE.operator : 5, `${this.name.charAt(0).toUpperCase() + this.name.substring(1).toLowerCase()}`])
+    for (const id in this.ports.haste) {
+      const port = this.ports.haste[id]
+      a.push([this.x + port.x, this.y + port.y, TYPE.haste, `${this.glyph}-${id}`])
     }
-    if (Object.keys(this.ports.input).length > 0) {
-      for (const name in this.ports.input) {
-        ports += `${name}, `
-      }
+    for (const id in this.ports.input) {
+      const port = this.ports.input[id]
+      a.push([this.x + port.x, this.y + port.y, TYPE.input, `${this.glyph}-${id}`])
     }
-    return ports !== '' ? '(' + ports.substr(0, ports.length - 2) + ')' : ''
+
+    if (this.ports.output) {
+      const port = this.ports.output
+      a.push([this.x + port.x, this.y + port.y, TYPE.output, `${this.glyph}-output`])
+    }
+    return a
   }
 
   this.docs = function () {
-    return `\`${this.glyph.toUpperCase()}\` **${this.name}**${this._ports()}: ${this.info}`
+    return `\`${this.glyph.toUpperCase()}\` **${this.name}**: ${this.info}`
   }
 
   function clamp (v, min, max) { return v < min ? min : v > max ? max : v }

@@ -10,15 +10,15 @@ app.win = null
 app.on('ready', () => {
   app.win = new BrowserWindow({
     width: 710,
-    height: 450,
+    height: 470,
     minWidth: 320,
     minHeight: 320,
-    frame: process.platform === 'win32',
+    backgroundColor: '#000',
     resizable: true,
-    icon: __dirname + '/icon.ico',
-    transparent: process.platform !== 'win32',
-    skipTaskbar: process.platform !== 'win32',
-    autoHideMenuBar: process.platform !== 'win32'
+    icon: __dirname + '/' + { darwin: 'icon.icns', linux: 'icon.png', win32: 'icon.ico' }[process.platform] || 'icon.ico',
+    frame: process.platform !== 'darwin',
+    skipTaskbar: process.platform === 'darwin',
+    autoHideMenuBar: process.platform === 'darwin'
   })
 
   app.win.loadURL(`file://${__dirname}/sources/index.html`)
@@ -59,10 +59,10 @@ app.toggleFullscreen = function () {
 }
 
 app.toggleVisible = function () {
-  if (process.platform === 'win32') {
-    if (!app.win.isMinimized()) { app.win.minimize() } else { app.win.restore() }
-  } else {
+  if (process.platform === 'darwin') {
     if (isShown && !app.win.isFullScreen()) { app.win.hide() } else { app.win.show() }
+  } else {
+    if (!app.win.isMinimized()) { app.win.minimize() } else { app.win.restore() }
   }
 }
 
