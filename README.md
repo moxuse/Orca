@@ -98,7 +98,7 @@ To open the console, press `ctrl+.`.
 
 The [MIDI](https://en.wikipedia.org/wiki/MIDI) operator `:` takes up to 5 inputs('channel, 'octave, 'note, velocity, length). 
 
-For example, `:25C`, is a **C note, on the 5th octave, through the 3rd MIDI channel**, `:04c`, is a **C# note, on the 4th octave, through the 1st MIDI channel**. Velocity is an optional value from `0`(0/127) to `f`(127/127). Note length is a value from `0`(1/16) to `f`(16/16), which is a ratio of a full bar, *f* being `16/16`(a full bar), *8* being `1/2`(half), *4* being `1/4`(quarter). See it in action with [midi.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_midi.orca).
+For example, `:25C`, is a **C note, on the 5th octave, through the 3rd MIDI channel**, `:04c`, is a **C# note, on the 4th octave, through the 1st MIDI channel**. Velocity is an optional value from `0`(0/127) to `g`(127/127). Note length is the number of frames during which a note remains active. See it in action with [midi.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_midi.orca).
 
 #### List Midi Devices
 
@@ -126,6 +126,18 @@ You can use the [listener.js](https://github.com/hundredrabbits/Orca/blob/master
 
 In console, type `terminal.io.udp.select(49160)` to select the **49160** udp port.
 
+#### Control Orca via UDP
+
+You can send UDP to Orca on port **49161**.
+
+- `p`, will start playing.
+- `s`, will stop playing.
+- `r`, will run the current frame.
+- `g`, will return the current frame.
+- `b123`, will set the bpm to `123`.
+- `f456`, will set the frame to `456`.
+- `w*12:34`, will write `*`, at `12,34`.
+
 ## OSC
 
 The [OSC](https://github.com/MylesBorins/node-osc) operator `=` locks each consecutive eastwardly ports. 
@@ -149,6 +161,18 @@ Orca operates on a base of 36 increments. Operators using numeric values will ty
 | 12    | 13    | 14    | 15    | 16    | 17    | 18    | 19    | 20    | 21    | 22    | 23     | 
 | **O** | **P** | **Q** | **R** | **S** | **T** | **U** | **V** | **W** | **X** | **Y** | **Z**  | 
 | 24    | 25    | 26    | 27    | 28    | 29    | 30    | 31    | 32    | 33    | 34    | 35     |
+
+## Default Ports
+
+| UDP Input  | OSC Input  | UDP Output | OSC Output |
+| ---------- | ---------- | ---------- | -----------|
+| 49160      | None       | 49161      | 49162
+
+## Companion Applications
+
+- [AIOI](https://github.com/MAKIO135/aioi), a companion to send complex OSC messages.
+- [ESTRA](https://github.com/kyleaedwards/estra), a companion sampler tool.
+- [PILOT](https://github.com/hundredrabbits/pilot), a companion synth tool.
 
 ## Extras
 

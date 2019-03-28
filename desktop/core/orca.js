@@ -3,8 +3,8 @@
 const library = require('./library')
 
 function Orca (terminal, host = null) {
-  this.w = 0 // Default Width
-  this.h = 0 // Default Height
+  this.w = 1 // Default Width
+  this.h = 1 // Default Height
   this.s = '' // String
   this.f = host ? host.f : 0 // Frame
 
@@ -24,6 +24,7 @@ function Orca (terminal, host = null) {
   }
 
   this.reset = function (w = this.w, h = this.h) {
+    this.f = 0
     this.w = w
     this.h = h
     this.s = new Array((this.h * this.w) + 1).join('.')
@@ -130,7 +131,7 @@ function Orca (terminal, host = null) {
   // Helpers
 
   this.inBounds = function (x, y) {
-    return x >= 0 && x < this.w && y >= 0 && y < this.h
+    return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && x < this.w && y >= 0 && y < this.h
   }
 
   this.isAllowed = function (g) {
@@ -146,7 +147,7 @@ function Orca (terminal, host = null) {
   }
 
   this.indexAt = function (x, y) {
-    return x + (this.w * y)
+    return this.inBounds(x, y) === true ? x + (this.w * y) : -1
   }
 
   this.posAt = function (index) {
@@ -162,6 +163,15 @@ function Orca (terminal, host = null) {
   }
 
   // Tools
+
+  this.inspect = function (limit = terminal.grid.w) {
+    const str = Object.keys(this.values).filter((key) => { return this.values[key] !== '.' }).join('')
+    if (str.length < limit) {
+      return fill(str, limit, '.')
+    }
+    const key = this.f % str.length
+    return str.slice(key) + str.substr(0, key)
+  }
 
   this.format = function () {
     const a = []
@@ -180,6 +190,7 @@ function Orca (terminal, host = null) {
   this.reset()
 
   function clamp (v, min, max) { return v < min ? min : v > max ? max : v }
+  function fill (str, len, chr) { while (str.length < len) { str += chr }; return str }
 }
 
 module.exports = Orca

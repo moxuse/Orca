@@ -16,7 +16,6 @@ function Terminal () {
   this.cursor = new Cursor(this)
   this.source = new Source(this)
   this.keyboard = new Keyboard(this)
-
   this.history = new History()
   this.controller = new Controller()
   this.clocks = [new Clock(120)]
@@ -43,7 +42,7 @@ function Terminal () {
   this.start = function () {
     this.theme.start()
     this.io.start()
-    this.source.new()
+    this.source.start()
     this.history.bind(this.orca, 's')
     this.history.record(this.orca.s)
     this.nextClock()
@@ -58,11 +57,19 @@ function Terminal () {
     this.update()
   }
 
-  this.pause = function () {
-    this.isPaused = !this.isPaused
-    console.log(this.isPaused ? 'Paused' : 'Unpaused')
+  this.play = function () {
+    console.log('Play')
+    this.isPaused = false
     this.update()
-    this.clock().setRunning(!this.isPaused)
+    this.clock().setRunning(true)
+  }
+
+  this.stop = function () {
+    console.log('Stop')
+    this.io.midi.silence()
+    this.isPaused = true
+    this.update()
+    this.clock().setRunning(false)
   }
 
   this.load = function (orca, frame = 0) {
@@ -81,6 +88,17 @@ function Terminal () {
 
   this.reset = function () {
     this.theme.reset()
+  }
+
+  this.prevFrame = function () {
+    this.orca.f -= 2
+    this.stop()
+    this.run()
+  }
+
+  this.nextFrame = function () {
+    this.stop()
+    this.run()
   }
 
   // Clock
@@ -127,6 +145,14 @@ function Terminal () {
   this.toggleRetina = function () {
     this.scale = this.scale === 1 ? window.devicePixelRatio : 1
     this.resize(true)
+  }
+
+  this.togglePlay = function () {
+    if (this.isPaused === true) {
+      this.play()
+    } else {
+      this.stop()
+    }
   }
 
   this.modSpeed = function (mod = 0) {
@@ -207,14 +233,19 @@ function Terminal () {
     this.write(`${this.cursor.x},${this.cursor.y}`, col * 0, 1, this.grid.w)
     this.write(`${this.cursor.w}:${this.cursor.h}`, col * 1, 1, this.grid.w)
     this.write(`${this.cursor.inspect()}`, col * 2, 1, this.grid.w)
-    this.write(`${this.source}${this.cursor.mode === 2 ? '^' : this.cursor.mode === 1 ? '+' : ''}`, col * 3, 1, this.grid.w)
-    this.write(`${this.io.midi}`, col * 4, 1, this.grid.w * 2)
+    this.write(`${this.orca.f}f${this.isPaused ? '*' : ''}`, col * 3, 1, this.grid.w)
+    this.write(`${this.orca.inspect(this.grid.w)}`, col * 4, 1, this.grid.w)
+
     // Grid
     this.write(`${this.orca.w}x${this.orca.h}`, col * 0, 0, this.grid.w)
     this.write(`${this.grid.w}/${this.grid.h}`, col * 1, 0, this.grid.w)
-    this.write(`${this.orca.f}f${this.isPaused ? '*' : ''}`, col * 2, 0, this.grid.w)
+    this.write(`${this.source}${this.cursor.mode === 2 ? '^' : this.cursor.mode === 1 ? '+' : ''}`, col * 2, 0, this.grid.w)
     this.write(`${this.clock()}${this.orca.f % 4 === 0 ? '*' : ''}`, col * 3, 0, this.grid.w)
-    this.write(`${this.io}`, col * 4, 0, this.grid.w)
+    this.write(`${this.io.inspect(this.grid.w)}`, col * 4, 0, this.grid.w)
+
+    if (this.orca.f < 25) {
+      this.write(`${this.io.midi}`, col * 5, 0, this.grid.w * 2)
+    }
   }
 
   this.drawSprite = function (x, y, g, type) {

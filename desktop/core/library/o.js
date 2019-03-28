@@ -14,14 +14,14 @@ function OperatorO (orca, x, y, passive) {
   this.ports.output = { x: 0, y: 1 }
 
   this.haste = function () {
-    const x = this.listen(this.ports.haste.x, true) + 1
+    const x = this.listen(this.ports.haste.x, true)
     const y = this.listen(this.ports.haste.y, true)
-    this.ports.input.val = { x: x, y: y }
+    this.ports.input.val = { x: x + 1, y: y }
   }
 
   this.run = function () {
     const res = this.listen(this.ports.input.val)
-    this.output(`${res}`)
+    this.output(`${res}`, true)
   }
 }
 
