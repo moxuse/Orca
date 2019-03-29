@@ -3,16 +3,19 @@
 const Midi = require('./io.midi')
 const Udp = require('./io.udp')
 const Osc = require('./io.osc')
+const OscIncome = require('./io.osc.income')
 
 function IO (terminal) {
   this.midi = new Midi(terminal)
   this.udp = new Udp(terminal)
   this.osc = new Osc(terminal)
+  this.oscIncome = new OscIncome(terminal)
 
   this.start = function () {
     this.midi.start()
     this.udp.start()
     this.osc.start()
+    this.oscIncome.start()
     this.clear()
   }
 
