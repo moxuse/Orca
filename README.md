@@ -4,9 +4,9 @@
 
 **Each letter of the alphabet is an operation**, <br />lowercase letters operate on bang, uppercase letters operate each frame. 
 
-**To get started**, have a look at some projects created with [#ORCΛ](https://twitter.com/hashtag/ORCΛ), watch the [introduction video](https://www.youtube.com/watch?v=RaI_TuISSJE), or check out the [example files](https://github.com/hundredrabbits/Orca/tree/master/examples) & [tutorials](TUTORIAL.md). If you need some help, visit the [forum](https://llllllll.co/t/orca-live-coding-tool/17689), or the [chatroom](https://talk.lurk.org/channel/orca). 
+**To learn more**, have a look at some projects created with [#ORCΛ](https://twitter.com/hashtag/ORCΛ), watch the [introduction video](https://www.youtube.com/watch?v=RaI_TuISSJE), or check out the [examples](https://github.com/hundredrabbits/Orca/tree/master/examples) & [tutorials](TUTORIAL.md). If you need some help, visit the [forum](https://llllllll.co/t/orca-live-coding-tool/17689), or the [chatroom](https://talk.lurk.org/channel/orca). 
 
-For a **portable version of Orca**, built entirely in C, visit [Orca-c](http://github.com/hundredrabbits/Orca-c). To quicky get started with Orca, have a look at the [Pilot tutorial](https://github.com/hundredrabbits/Orca/blob/master/TUTORIAL.md#pilot).
+If you're looking for a **light version of Orca**, visit [Orca-c](http://github.com/hundredrabbits/Orca-c). 
 
 ## Install & Run
 
@@ -56,75 +56,17 @@ npm start
 - `;` **udp**: Sends a UDP message.
 - `=` **osc**: Sends a OSC message.
 
-## Controls
-
-### Terminal Controls
-
-- `enter` bang selected operator.
-- `shift+enter` toggle insert/write.
-- `space` toggle play/pause.
-- `>` increase BPM.
-- `<` decrease BPM.
-- `shift+arrowKey` Expand cursor.
-- `ctrl+arrowKey` Leap cursor.
-- `alt+arrowKey` Move selection.
-
-### Edit
-
-- `ctrl+c` copy selection.
-- `ctrl+x` cut selection.
-- `ctrl+v` paste selection.
-- `ctrl+z` undo.
-- `ctrl+shift+z` redo.
-
-### Grid Controls
-
-- `]` increase grid size vertically.
-- `[` decrease grid size vertically.
-- `}` increase grid size horizontally.
-- `{` decrease grid size horizontally.
-- `ctrl/meta+]` increase program size vertically.
-- `ctrl/meta+[` decrease program size vertically.
-- `ctrl/meta+}` increase program size horizontally.
-- `ctrl/meta+{` decrease program size horizontally.
-
-### Window
-
-- `ctrl+=` Zoom In.
-- `ctrl+-` Zoom Out.
-- `ctrl+0` Zoom Reset.
-- `tab` Toggle interface.
-- `backquote` Toggle background.
-
-To open the console, press `ctrl+.`.
-
 ## MIDI
 
 The [MIDI](https://en.wikipedia.org/wiki/MIDI) operator `:` takes up to 5 inputs('channel, 'octave, 'note, velocity, length). 
 
 For example, `:25C`, is a **C note, on the 5th octave, through the 3rd MIDI channel**, `:04c`, is a **C# note, on the 4th octave, through the 1st MIDI channel**. Velocity is an optional value from `0`(0/127) to `g`(127/127). Note length is the number of frames during which a note remains active. See it in action with [midi.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_midi.orca).
 
-#### List Midi Devices
-
-In console, type `terminal.io.midi.list()` to see the list of available midi devices.
-
-#### Select Midi Device
-
-In console, type `terminal.io.midi.select(1)` to select the second midi device.
-
-#### Using MIDI beat clock instead of the built in clock
-
-Orca comes with its own internal clock but you can configure it to receive its clock signal from a MIDI input.
-Press `Ctrl+Space` to cycle through available clocks (built in or MIDI inputs).
-The MIDI clock listens for the START and STOP signals from the midi device to run.
-
-*Warning*: Note length when using the MIDI clock is currently based on note length at 120 BPM.
-
 ## MIDI CC
 
-The [MIDI](https://www.sweetwater.com/insync/continuous-controller/) operator `^` takes up to 2 inputs('channel, 'value).
+The [MIDI CC](https://www.sweetwater.com/insync/continuous-controller/) operator `^` takes 3 inputs('channel, 'knob, 'value).
 
-It sends a value **between 0-127**, where the value is calculated as a ratio of 36, over a maximum of 127. For example, `^08`, is equal to **28**, or `(8/36)*127`. You can press `enter`, with the `^` operator select, to assign it to a midi cc enabled knob.
+It sends a value **between 0-127**, where the value is calculated as a ratio of 36, over a maximum of 127. For example, `^08`, is equal to **28**, or `(8/36)*127`. You can press `shift+enter`, with the `^` operator selected, to assign it to a controller.
 
 ## UDP
 
@@ -132,37 +74,17 @@ The [UDP](https://nodejs.org/api/dgram.html#dgram_socket_send_msg_offset_length_
 
 You can use the [listener.js](https://github.com/hundredrabbits/Orca/blob/master/listener.js) to test UDP messages. See it in action with [udp.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_udp.orca).
 
-#### Select UDP Port
-
-In console, type `terminal.io.udp.select(49160)` to select the **49160** udp port.
-
-#### Control Orca via UDP
-
-You can send UDP to Orca on port **49161**.
-
-- `p`, will start playing.
-- `s`, will stop playing.
-- `r`, will run the current frame.
-- `g`, will return the current frame.
-- `b123`, will set the bpm to `123`.
-- `f456`, will set the frame to `456`.
-- `w*12:34`, will write `*`, at `12,34`.
-
 ## OSC
 
-The [OSC](https://github.com/MylesBorins/node-osc) operator `=` locks each consecutive eastwardly ports. 
+The [OSC](https://github.com/MylesBorins/node-osc) operator `=` locks each consecutive eastwardly ports. The first character is used for the path, the following characters are sent as integers using the [base36 Table](https://github.com/hundredrabbits/Orca#base36-table).
 
-First char is used for path, nexts are sent as integers using [base36 Table](https://github.com/hundredrabbits/Orca#base36-table). For example, `=1abc` will send `10`, `11` and `12` to `/1`, via the port `49162` on `localhost`; `=a123` will send `1`, `2` and `3`, to the path `/a`.  You can use the [listener.js](https://github.com/hundredrabbits/Orca/blob/master/listener.js) to test OSC messages. See it in action with [osc.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_osc.orca) or try it with [SonicPi](https://github.com/hundredrabbits/Orca/blob/master/TUTORIAL.md#sonicpi).
-
-#### Select OSC Port
-
-In console, type `terminal.io.osc.select(49162)` to select the **49162** osc port.
+For example, `=1abc` will send `10`, `11` and `12` to `/1`, via the port `49162` on `localhost`; `=a123` will send `1`, `2` and `3`, to the path `/a`. You can use the [listener.js](https://github.com/hundredrabbits/Orca/blob/master/listener.js) to test OSC messages. See it in action with [osc.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_osc.orca) or try it with [SonicPi](https://github.com/hundredrabbits/Orca/blob/master/TUTORIAL.md#sonicpi).
 
 <img src='https://raw.githubusercontent.com/hundredrabbits/Orca/master/resources/preview.hardware.jpg' width="600"/>
 
 ## Base36 Table
 
-Orca operates on a base of 36 increments. Operators using numeric values will typically also operate on letters and convert them into values as per the following table. For instance `Dp` will bang every *24th frame*.
+Orca operates on a base of **36 increments**. Operators using numeric values will typically also operate on letters and convert them into values as per the following table. For instance `Dp` will bang every *24th frame*.
 
 | 0     | 1     | 2     | 3     | 4     | 5     | 6     | 7     | 8     | 9     | A     | B      | 
 | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | 
@@ -178,25 +100,11 @@ Orca operates on a base of 36 increments. Operators using numeric values will ty
 | ---------- | ---------- | ---------- | -----------|
 | 49160      | None       | 49161      | 49162
 
-# Operator Families
-
-| Families   | Operators
-| ---------- | ----------- 
-| Directions | N S E W Z
-| Math       | A F I M R
-| Writers    | G P X 
-| Readers    | O Q T
-| Jumpers    | J Y
-| Timers     | C D
-| Variables  | K V
-| Misc       | B H L U
-| Special    | * # ; : =
-
 ## Companion Applications
 
+- [PILOT](https://github.com/hundredrabbits/pilot), a companion synth tool.
 - [AIOI](https://github.com/MAKIO135/aioi), a companion to send complex OSC messages.
 - [ESTRA](https://github.com/kyleaedwards/estra), a companion sampler tool.
-- [PILOT](https://github.com/hundredrabbits/pilot), a companion synth tool.
 
 ## Extras
 
