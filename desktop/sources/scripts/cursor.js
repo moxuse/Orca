@@ -22,7 +22,14 @@ function Cursor (terminal) {
     terminal.update()
   }
 
+  this.resize = function (w, h) {
+    this.w = clamp(w, 1, terminal.orca.w - this.x)
+    this.h = clamp(h, 1, terminal.orca.h - this.y)
+    terminal.update()
+  }
+
   this.drag = function (x, y) {
+    this.mode = 0
     this.cut()
     this.move(x, y)
     this.paste()
@@ -64,7 +71,7 @@ function Cursor (terminal) {
   }
 
   this.paste = function () {
-    this.writeBlock(this.toRect(), clipboard.readText().split(/\r?\n/))
+    this.writeBlock(clipboard.readText().split(/\r?\n/))
   }
 
   this.read = function () {
@@ -72,19 +79,19 @@ function Cursor (terminal) {
   }
 
   this.write = function (g) {
-    if (this.mode === 2) {
-      terminal.io.sendKey(event.key)
-      return
-    }
     if (terminal.orca.write(this.x, this.y, g) && this.mode === 1) {
       this.move(1, 0)
     }
     terminal.history.record(terminal.orca.s)
   }
 
-  this.erase = function (bs) {
-    if (bs && this.mode === 1) { this.move(-1, 0) }
+  this.erase = function (key) {
+    if (terminal.commander.isActive === true) {
+      terminal.commander.erase()
+      return
+    }
     this.eraseBlock(this.x, this.y, this.w, this.h)
+    if (this.mode === 1) { this.move(-1, 0) }
     terminal.history.record(terminal.orca.s)
   }
 
@@ -92,7 +99,9 @@ function Cursor (terminal) {
     const i = terminal.orca.s.indexOf(str)
     if (i < 0) { return }
     const pos = terminal.orca.posAt(i)
-    this.x = pos.x + 1
+    this.w = str.length
+    this.h = 1
+    this.x = pos.x
     this.y = pos.y
   }
 
@@ -117,6 +126,15 @@ function Cursor (terminal) {
     return 'empty'
   }
 
+  this.comment = function () {
+    const block = this.getBlock()
+    for (const id in block) {
+      block[id][0] = block[id][0] === '#' ? '.' : '#'
+      block[id][block[id].length - 1] = block[id][block[id].length - 1] === '#' ? '.' : '#'
+    }
+    this.writeBlock(block)
+  }
+
   // Block
 
   this.getBlock = function (rect = this.toRect()) {
@@ -131,7 +149,7 @@ function Cursor (terminal) {
     return block
   }
 
-  this.writeBlock = function (rect, block) {
+  this.writeBlock = function (block, rect = this.toRect()) {
     if (!block || block.length === 0) { return }
     let _y = rect.y
     for (const lineId in block) {

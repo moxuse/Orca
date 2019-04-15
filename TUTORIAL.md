@@ -1,56 +1,39 @@
 # Tutorial
 
-If this is your first time hearing about Orca, watch this [introduction video](https://www.youtube.com/watch?v=RaI_TuISSJE). If you are on Windows, use something like [loopMidi](http://www.tobias-erichsen.de/software/loopmidi.html) to help routing midi signal across applications.
+If this is your first time trying out **Orca**, watch this [introduction video](https://www.youtube.com/watch?v=RaI_TuISSJE). 
 
-| Families                                               | Glyphs
-| ----------                                             | -----------
-| Directions                                             | N S E W Z
-| [Math](https://www.youtube.com/watch?v=CR1TMGYhCoE)    | A F I M R
-| Writers                                                | G P X
-| Readers                                                | Q T O
-| [Jumpers](https://www.youtube.com/watch?v=CR1TMGYhCoE) | J Y
-| Timers                                                 | C D
-| Variables                                              | K V
-| Misc                                                   | B H L U
-| Special                                                | * # ; : =
+## General
 
-## MIDI
+- On **OSX**, setup [IAC virtual MIDI buses](https://help.ableton.com/hc/en-us/articles/209774225-Using-virtual-MIDI-buses).
+- On **Windows**, setup [loopMidi](http://www.tobias-erichsen.de/software/loopmidi.html).
+- On **Linux**, setup [qjacktl](https://qjackctl.sourceforge.io/).
 
-#### Using MIDI beat clock instead of the built in clock
+## Ableton Live
 
-Orca comes with its own internal clock but you can configure it to receive its clock signal from a MIDI input.
-Press `Ctrl+Space` to cycle through available clocks (built in or MIDI inputs).
-The MIDI clock listens for the START and STOP signals from the midi device to run.
+To send [Midi notes](https://github.com/hundredrabbits/Orca#midi) to [Ableton Live](https://www.ableton.com/en/) instruments, bang the Midi operator `:`, like `:03C` to send to _Channel 1, Octave 3, Note C_. Have a look at [midi.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_midi.orca) to see it in action.
 
-*Warning*: Note length when using the MIDI clock is currently based on note length at 120 BPM.
+- Launch Ableton Live.
+- Create a new **midi instrument** track.
+- Select `IAC Driver(Bus 1)`(OSX), or `LoopMidi`(Windows), in the instrument's inputs dropdown.
+- Activate the **In** toggle, on the instrument track.
 
-#### Binding to Midi CC
+## Bitwig
 
-To bind the [Midi CC](https://www.sweetwater.com/insync/continuous-controller/) operator(`^`) to a knob, have **Midi Mapping active**, and bang the `^00` operator, or select it and press `shift+enter`. It will assign the value of channel 0 to this knob.
+The following is taken from this page: https://answers.bitwig.com/questions/1218/how-do-i-get-midi-inout-of-bws-on-linux
 
-## UDP
-
-#### Select UDP Port
-
-In console, type `terminal.io.udp.select(49160)` to select the **49160** UDP port.
-
-#### Control Orca via UDP
-
-You can send UDP to Orca on port **49161**.
-
-- `p`, will start playing.
-- `s`, will stop playing.
-- `r`, will run the current frame.
-- `g`, will return the current frame.
-- `b123`, will set the bpm to `123`.
-- `f456`, will set the frame to `456`.
-- `wA12:34`, will write `A`, at `12,34`.
-
-## OSC
-
-#### Select OSC Port
-
-In console, type `terminal.io.osc.select(49162)` to select the **49162** osc port.
+- Quit Bitwig if running.
+- Start `qjacktl`.
+- Go to _Setup > Settings > Parameters_ and set MIDI Driver to "none" (this turns off jack-midi)
+- Go to Setup > Misc and check "Enable ALSA Sequencer Support" (if not enabled)
+- Stop Jack if running and quit gjackctl
+- Run sudo modprobe snd_virmidi midi_devs=1 (to enable virtual midi with one device which is easier to understand for now)
+- Start qjacktl
+- Start jack
+- Open Connections: Connect device on left "0: QuNexus MIDI 1" to "0:VirMIDI 5-0"
+- Open Bitwig
+- Under Options > Preferences > Controllers click "Add controller manually"
+- Choose "Generic MIDI Keyboard"
+- Once it appears as an input choose "Virtual Raw MIDI/1"
 
 ## SonicPi
 
@@ -82,21 +65,9 @@ Here's a list of supported operations.
 ;          // Redraw
 ```
 
-## Ableton Live
-
-To send [Midi notes](https://github.com/hundredrabbits/Orca#midi) to [Ableton Live](https://www.ableton.com/en/) instruments, bang the Midi node `:`, like `:03C` to send to _Channel 1, Octave 3, Note C_. Have a look at [midi.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_midi.orca) to see it in action.
-
-- Launch Ableton Live.
-- Create a new midi instrument track.
-- macOS: Setup the IAC bus. [Using virtual MIDI buses](https://help.ableton.com/hc/en-us/articles/209774225-Using-virtual-MIDI-buses)
-- Select `IAC Driver(Bus 1)`(OSX), or `LoopMidi`(Windows), in the instrument's inputs dropdown.
-- Activate the **In** toggle.
-
-The midi instrument should begin receiving midi notes as soon as the Orca window is **in focus**.
-
 ## Pilot
 
-[Pilot](https://github.com/hundredrabbits/Pilot) is a minimalist synth software designed to work via UDP. It's designed to quickly get started with Orca. Remember that **Pilot uses UDP instead of MIDI**. Have a look at [pilot.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/projects/pilot.orca) to see it in action.
+[Pilot](https://github.com/hundredrabbits/Pilot) is a minimalist synth software designed to work via UDP, and to quickly get started with Orca. Remember that **Pilot uses UDP instead of MIDI**. Have a look at [pilot.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/projects/pilot.orca) to see how it should be used.
 
 ## Patterns
 
@@ -168,3 +139,17 @@ Banging the lowercase `x` triggers it, count ranges from the right `x` input to 
 .*Y*h..
 ....I0z
 ```
+
+## Families
+
+| Families                                               | Glyphs
+| ----------                                             | -----------
+| Directions                                             | N S E W Z
+| [Math](https://www.youtube.com/watch?v=CR1TMGYhCoE)    | A F I M R
+| Writers                                                | G P X
+| Readers                                                | Q T O
+| [Jumpers](https://www.youtube.com/watch?v=CR1TMGYhCoE) | J Y
+| Timers                                                 | C D
+| Variables                                              | K V
+| Misc                                                   | B H L U
+| Special                                                | * # ; : =

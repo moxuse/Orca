@@ -14,8 +14,8 @@ function OperatorMidi (orca, x, y, passive) {
   this.ports.input.velocity = { x: 4, y: 0 }
   this.ports.input.length = { x: 5, y: 0 }
 
-  this.run = function () {
-    if (!this.bang()) { return }
+  this.run = function (force = false) {
+    if (!this.bang() && force === false) { return }
 
     let rawChannel = this.listen(this.ports.haste.channel)
     let rawOctave = this.listen(this.ports.haste.octave, true)
@@ -28,7 +28,7 @@ function OperatorMidi (orca, x, y, passive) {
     // 0 - 16
     const channel = clamp(orca.valueOf(rawChannel), 0, 15)
     // 1 - 8
-    const octave = clamp(rawNote === 'b' ? rawOctave + 1 : rawOctave, 1, 8)
+    const octave = clamp(rawNote === 'b' ? rawOctave + 1 : rawOctave, 0, 8)
     // 0 - 11
     const note = ['C', 'c', 'D', 'd', 'E', 'F', 'f', 'G', 'g', 'A', 'a', 'B'].indexOf(rawNote === 'e' ? 'F' : rawNote === 'b' ? 'C' : rawNote)
     // 0 - G(127)

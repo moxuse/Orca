@@ -66,21 +66,44 @@ For example, `:25C`, is a **C note, on the 5th octave, through the 3rd MIDI chan
 
 The [MIDI CC](https://www.sweetwater.com/insync/continuous-controller/) operator `^` takes 3 inputs('channel, 'knob, 'value).
 
-It sends a value **between 0-127**, where the value is calculated as a ratio of 36, over a maximum of 127. For example, `^08`, is equal to **28**, or `(8/36)*127`. You can press `shift+enter`, with the `^` operator selected, to assign it to a controller.
+It sends a value **between 0-127**, where the value is calculated as a ratio of 36, over a maximum of 127. For example, `^008`, is sending **28**, or `(8/36)*127` through the first channel, to the control mapped with `id0`. You can press **enter**, with the `^` operator selected, to assign it to a controller.
 
 ## UDP
 
-The [UDP](https://nodejs.org/api/dgram.html#dgram_socket_send_msg_offset_length_port_address_callback) operator `;` locks each consecutive eastwardly ports. For example, `;hello`, will send the string "hello", on bang, to the port `49160` on `localhost`
+The [UDP](https://nodejs.org/api/dgram.html#dgram_socket_send_msg_offset_length_port_address_callback) operator `;` locks each consecutive eastwardly ports. For example, `;hello`, will send the string "hello", on bang, to the port `49160` on `localhost`. In console, use `terminal.io.udp.select()` to select a **custom UDP port**.
 
 You can use the [listener.js](https://github.com/hundredrabbits/Orca/blob/master/listener.js) to test UDP messages. See it in action with [udp.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_udp.orca).
 
 ## OSC
 
-The [OSC](https://github.com/MylesBorins/node-osc) operator `=` locks each consecutive eastwardly ports. The first character is used for the path, the following characters are sent as integers using the [base36 Table](https://github.com/hundredrabbits/Orca#base36-table).
+The [OSC](https://github.com/MylesBorins/node-osc) operator `=` locks each consecutive eastwardly ports. The first character is used for the path, the following characters are sent as integers using the [base36 Table](https://github.com/hundredrabbits/Orca#base36-table). In console, use `terminal.io.osc.select()` to select a **custom osc port**.
 
 For example, `=1abc` will send `10`, `11` and `12` to `/1`, via the port `49162` on `localhost`; `=a123` will send `1`, `2` and `3`, to the path `/a`. You can use the [listener.js](https://github.com/hundredrabbits/Orca/blob/master/listener.js) to test OSC messages. See it in action with [osc.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_osc.orca) or try it with [SonicPi](https://github.com/hundredrabbits/Orca/blob/master/TUTORIAL.md#sonicpi).
 
 <img src='https://raw.githubusercontent.com/hundredrabbits/Orca/master/resources/preview.hardware.jpg' width="600"/>
+
+## Advanced Controls
+
+Some of Orca's features can be **controlled externally** via UDP though port `49160`, or via its own command-line interface. To activate the command-line prompt, press `CmdOrCtrl+K`. The prompt can also be used to inject patterns, to see the full list of patterns, see [patterns.js](https://github.com/hundredrabbits/Orca/blob/master/desktop/sources/scripts/patterns.js).
+
+### Default Ports
+
+| UDP Input  | OSC Input  | UDP Output | OSC Output |
+| ---------- | ---------- | ---------- | -----------|
+| 49160      | None       | 49161      | 49162
+
+### Commands
+
+All commands have a shorthand equivalent to their first character, for example, `write` can also be called using `w`.
+
+- `play` Plays program.
+- `stop` Stops program.
+- `run` Runs current frame.
+- `time:0` Sets the frame value to `0`.
+- `goto:aV` Sends cursor to `aV`.
+- `bpm:140` Sets bpm speed to `140`.
+- `apm:160` Animates bpm speed to `160`.
+- `write:H12;34` Write glyph `H`, at `12,34`.
 
 ## Base36 Table
 
@@ -94,17 +117,17 @@ Orca operates on a base of **36 increments**. Operators using numeric values wil
 | **O** | **P** | **Q** | **R** | **S** | **T** | **U** | **V** | **W** | **X** | **Y** | **Z**  | 
 | 24    | 25    | 26    | 27    | 28    | 29    | 30    | 31    | 32    | 33    | 34    | 35     |
 
-## Default Ports
-
-| UDP Input  | OSC Input  | UDP Output | OSC Output |
-| ---------- | ---------- | ---------- | -----------|
-| 49160      | None       | 49161      | 49162
 
 ## Companion Applications
 
 - [PILOT](https://github.com/hundredrabbits/pilot), a companion synth tool.
 - [AIOI](https://github.com/MAKIO135/aioi), a companion to send complex OSC messages.
 - [ESTRA](https://github.com/kyleaedwards/estra), a companion sampler tool.
+
+## Tutorials
+
+- [Japanese](https://qiita.com/rucochanman/items/98a4ea988ae99e04b333)
+- [German](http://tropone.de/2019/03/13/orca-ein-sequenzer-der-kryptischer-nicht-aussehen-kann-und-ein-versuch-einer-anleitung/)
 
 ## Extras
 

@@ -28,7 +28,7 @@ function Udp (terminal) {
 
   this.play = function (data) {
     this.server.send(Buffer.from(`${data}`), this.port, '127.0.0.1', (err) => {
-      if (err) { console.log(err) }
+      if (err) { console.warn(err) }
     })
   }
 
@@ -53,7 +53,7 @@ function Udp (terminal) {
   // Input
 
   this.listener.on('message', (msg, rinfo) => {
-    return this.act(`${msg}`)
+    return terminal.commander.trigger(`${msg}`)
   })
 
   this.listener.on('listening', () => {
@@ -62,34 +62,9 @@ function Udp (terminal) {
   })
 
   this.listener.on('error', (err) => {
-    console.log(`Server error:\n ${err.stack}`)
+    console.warn(`Server error:\n ${err.stack}`)
     this.listener.close()
   })
-
-  this.act = function (msg) {
-    const key = `${msg}`.substr(0, 1).toLowerCase()
-    const val = `${msg}`.substr(1)
-    const int = parseInt(`${msg}`.substr(1))
-    if (key === 'p') {
-      terminal.play()
-    } else if (key === 's') {
-      terminal.stop()
-    } else if (key === 'r') {
-      terminal.run()
-    } else if (key === 'g') {
-      return `${terminal.orca}`
-    } else if (key === 'f' && Number.isInteger(int)) {
-      terminal.orca.f = int
-    } else if (key === 'b' && Number.isInteger(int)) {
-      terminal.setSpeed(int)
-    } else if (key === 'w' && val.length >= 4 && val.indexOf(':') > -1) {
-      const pos = val.substr(1).split(':')
-      terminal.orca.write(parseInt(pos[0]), parseInt(pos[1]), val.substr(0, 1))
-    } else {
-      console.warn(`Unknown message: ${msg}`)
-    }
-    return 'done.'
-  }
 
   this.listener.bind(49160)
 }

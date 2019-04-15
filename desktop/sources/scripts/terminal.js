@@ -2,12 +2,14 @@
 
 function Terminal () {
   const Orca = require('../../core/orca')
+  const IO = require('../../core/io')
   const Cursor = require('./cursor')
   const Source = require('./source')
   const History = require('./history')
-  const Keyboard = require('./keyboard')
-  const IO = require('./io')
+  const Commander = require('./commander')
   const Clock = require('./clock')
+  const Theme = require('./lib/theme')
+  const Controller = require('./lib/controller')
 
   this.library = require('../../core/library')
 
@@ -15,11 +17,10 @@ function Terminal () {
   this.io = new IO(this)
   this.cursor = new Cursor(this)
   this.source = new Source(this)
-  this.keyboard = new Keyboard(this)
+  this.commander = new Commander(this)
+  this.clock = new Clock(this)
   this.history = new History()
   this.controller = new Controller()
-  this.clocks = [new Clock(120)]
-  this.selectedClock = 0
 
   // Themes
   this.theme = new Theme({ background: '#000000', f_high: '#ffffff', f_med: '#777777', f_low: '#444444', f_inv: '#000000', b_high: '#eeeeee', b_med: '#72dec2', b_low: '#444444', b_inv: '#ffb545' })
@@ -32,8 +33,6 @@ function Terminal () {
   this.tile = { w: 10, h: 15 }
   this.scale = window.devicePixelRatio
 
-  this.isPaused = false
-
   this.install = function (host) {
     host.appendChild(this.el)
     this.theme.install(host)
@@ -45,7 +44,7 @@ function Terminal () {
     this.source.start()
     this.history.bind(this.orca, 's')
     this.history.record(this.orca.s)
-    this.nextClock()
+    this.clock.start()
     this.update()
     this.el.className = 'ready'
   }
@@ -55,21 +54,6 @@ function Terminal () {
     this.orca.run()
     this.io.run()
     this.update()
-  }
-
-  this.play = function () {
-    console.log('Play')
-    this.isPaused = false
-    this.update()
-    this.clock().setRunning(true)
-  }
-
-  this.stop = function () {
-    console.log('Stop')
-    this.io.midi.silence()
-    this.isPaused = true
-    this.update()
-    this.clock().setRunning(false)
   }
 
   this.load = function (orca, frame = 0) {
@@ -94,46 +78,6 @@ function Terminal () {
     this.theme.reset()
   }
 
-  this.prevFrame = function () {
-    this.orca.f -= 2
-    this.stop()
-    this.run()
-  }
-
-  this.nextFrame = function () {
-    this.stop()
-    this.run()
-  }
-
-  // Clock
-
-  this.clock = function () {
-    return this.clocks[this.selectedClock]
-  }
-
-  this.nextClock = function () {
-    const previousClock = this.clock()
-    if (previousClock) {
-      previousClock.setRunning(false)
-      previousClock.setCallback(() => {})
-    }
-    this.selectedClock = (this.selectedClock + 1) % this.clocks.length
-    this.clock().setRunning(!this.isPaused)
-    this.clock().setCallback(() => this.run())
-
-    console.log('Select clock:', this.clock())
-    this.update()
-  }
-
-  this.setSpeed = function (bpm) {
-    if (this.clock().canSetBpm()) {
-      bpm = clamp(bpm, 60, 300)
-      console.log(`Change Speed: ${bpm}.`)
-      this.clock().setBpm(bpm)
-      this.update()
-    }
-  }
-
   this.setGrid = function (w, h) {
     this.grid.w = w
     this.grid.h = h
@@ -149,20 +93,6 @@ function Terminal () {
   this.toggleRetina = function () {
     this.scale = this.scale === 1 ? window.devicePixelRatio : 1
     this.resize(true)
-  }
-
-  this.togglePlay = function () {
-    if (this.isPaused === true) {
-      this.play()
-    } else {
-      this.stop()
-    }
-  }
-
-  this.modSpeed = function (mod = 0) {
-    if (this.clock().canSetBpm()) {
-      this.setSpeed(this.clock().getBpm() + mod)
-    }
   }
 
   this.modGrid = function (x = 0, y = 0) {
@@ -221,12 +151,14 @@ function Terminal () {
   }
 
   this.drawProgram = function () {
+    const selection = this.cursor.read()
     for (let y = 0; y < this.orca.h; y++) {
       for (let x = 0; x < this.orca.w; x++) {
         const port = this.ports[this.orca.indexAt(x, y)]
         const glyph = this.guide(x, y)
         const style = this.isSelection(x, y) ? 4 : port ? port[2] : this.orca.lockAt(x, y) ? 5 : null
-        this.drawSprite(x, y, glyph, style)
+        const likeCursor = glyph === selection && glyph !== '.' && style !== 4 && !this.orca.lockAt(x, y)
+        this.drawSprite(x, y, glyph, likeCursor ? 6 : style)
       }
     }
   }
@@ -234,7 +166,7 @@ function Terminal () {
   this.drawInterface = function () {
     const col = this.grid.w
     // Cursor
-    this.write(`${this.cursor.x},${this.cursor.y}${this.cursor.mode === 2 ? '^' : this.cursor.mode === 1 ? '+' : ''}`, col * 0, 1, this.grid.w)
+    this.write(`${this.cursor.x},${this.cursor.y}${this.cursor.mode === 1 ? '+' : ''}`, col * 0, 1, this.grid.w, this.cursor.mode === 1 ? 1 : 2)
     this.write(`${this.cursor.w}:${this.cursor.h}`, col * 1, 1, this.grid.w)
     this.write(`${this.cursor.inspect()}`, col * 2, 1, this.grid.w)
     this.write(`${this.orca.f}f${this.isPaused ? '*' : ''}`, col * 3, 1, this.grid.w)
@@ -244,11 +176,15 @@ function Terminal () {
     this.write(`${this.orca.w}x${this.orca.h}`, col * 0, 0, this.grid.w)
     this.write(`${this.grid.w}/${this.grid.h}`, col * 1, 0, this.grid.w)
     this.write(`${this.source}`, col * 2, 0, this.grid.w)
-    this.write(`${this.clock()}${this.orca.f % 4 === 0 ? '*' : ''}`, col * 3, 0, this.grid.w)
+    this.write(`${this.clock}`, col * 3, 0, this.grid.w, this.io.midi.inputIndex > -1 ? 1 : 2)
     this.write(`${this.io.inspect(this.grid.w)}`, col * 4, 0, this.grid.w)
 
     if (this.orca.f < 25) {
       this.write(`${this.io.midi}`, col * 5, 0, this.grid.w * 2)
+    }
+
+    if (this.commander.isActive === true) {
+      this.write(`${this.commander.query}${this.orca.f % 2 === 0 ? '_' : ''}`, col * 5, 1, this.grid.w * 2, 1)
     }
   }
 
@@ -279,14 +215,16 @@ function Terminal () {
     if (type === 4) { return { bg: this.theme.active.b_inv, fg: this.theme.active.f_inv } }
     // Locked
     if (type === 5) { return { fg: this.theme.active.f_med } }
+    // LikeCursor
+    if (type === 6) { return { fg: this.theme.active.b_inv } }
     // Default
     return { fg: this.theme.active.f_low }
   }
 
-  this.write = function (text, offsetX, offsetY, limit) {
+  this.write = function (text, offsetX, offsetY, limit, type = 2) {
     let x = 0
     while (x < text.length && x < limit - 1) {
-      this.drawSprite(offsetX + x, this.orca.h + offsetY, text.substr(x, 1), 2)
+      this.drawSprite(offsetX + x, this.orca.h + offsetY, text.substr(x, 1), type)
       x += 1
     }
   }
@@ -345,6 +283,32 @@ function Terminal () {
   this.docs = function () {
     return Object.keys(this.library).reduce((acc, id) => { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].indexOf(id) < 0 ? `${acc}- ${new this.library[id]().docs()}\n` : acc }, '')
   }
+
+  // Events
+
+  window.addEventListener('dragover', (e) => {
+    e.stopPropagation()
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  })
+
+  window.addEventListener('drop', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const file = e.dataTransfer.files[0]
+    const path = file.path ? file.path : file.name
+
+    if (!path || path.indexOf('.orca') < 0) { console.log('Orca', 'Not a orca file'); return }
+
+    terminal.source.read(path)
+  })
+
+  window.onresize = (event) => {
+    terminal.resize()
+  }
+
+  // Helpers
 
   function clamp (v, min, max) { return v < min ? min : v > max ? max : v }
 }
