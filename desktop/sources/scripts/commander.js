@@ -1,7 +1,8 @@
 'use strict'
 
 function Commander (terminal) {
-  this.patterns = require('./patterns')
+  const Patterns = require('./patterns')
+  this.patterns = new Patterns(terminal)
 
   this.isActive = false
   this.query = ''
@@ -38,7 +39,21 @@ function Commander (terminal) {
   this.operations = {
     'apm': (val) => { terminal.clock.set(null, parseInt(val)) },
     'bpm': (val) => { terminal.clock.set(parseInt(val), parseInt(val), true) },
+    'color': (val) => {
+      const parts = val.split(';')
+      if (isColor(parts[0])) { terminal.theme.active.b_med = '#' + parts[0] }
+      if (isColor(parts[1])) { terminal.theme.active.b_inv = '#' + parts[1] }
+      if (isColor(parts[2])) { terminal.theme.active.b_high = '#' + parts[2] }
+    },
     'goto': (val) => { terminal.cursor.goto(val) },
+    'move': (val) => {
+      const pos = val.split(';')
+      const x = parseInt(pos[0])
+      const y = parseInt(pos[1])
+      if (!isNaN(x) && !isNaN(y)) {
+        terminal.cursor.moveTo(x, y)
+      }
+    },
     'play': (val) => { terminal.clock.play() },
     'run': (val) => { terminal.run() },
     'stop': (val) => { terminal.clock.stop() },
@@ -46,8 +61,8 @@ function Commander (terminal) {
     'write': (val) => {
       const g = val.substr(0, 1)
       const pos = val.substr(1).split(';')
-      const x = parseInt(pos[0])
-      const y = parseInt(pos[1])
+      const x = pos[0] ? parseInt(pos[0]) : terminal.cursor.x
+      const y = pos[1] ? parseInt(pos[1]) : terminal.cursor.y
       if (!isNaN(x) && !isNaN(y) && g) {
         terminal.orca.write(x, y, g)
       }
@@ -65,8 +80,8 @@ function Commander (terminal) {
 
     if (this.operations[cmd]) {
       this.operations[cmd](val)
-    } else if (this.patterns[msg]) {
-      this.inject(this.patterns[msg])
+    } else if (this.patterns.find(msg)) {
+      this.inject(this.patterns.find(msg))
     } else {
       console.warn(`Unknown message: ${msg}`)
     }
@@ -83,8 +98,9 @@ function Commander (terminal) {
   }
 
   this.preview = function () {
-    if (!this.patterns[this.query]) { terminal.cursor.reset(); return }
-    const result = this.patterns[this.query].trim().split('\n')
+    const pattern = this.patterns.find(this.query)
+    if (!pattern) { terminal.cursor.reset(); return }
+    const result = pattern.trim().split('\n')
     terminal.cursor.resize(result[0].length, result.length)
   }
 
@@ -95,6 +111,9 @@ function Commander (terminal) {
       event.preventDefault()
       return
     }
+
+    if (event.keyCode === 191 && (event.metaKey || event.ctrlKey)) { terminal.cursor.comment(); event.preventDefault(); return }
+
     if (event.key === 'c' && (event.metaKey || event.ctrlKey)) { terminal.cursor.copy(); event.preventDefault(); return }
     if (event.key === 'x' && (event.metaKey || event.ctrlKey)) { terminal.cursor.cut(); event.preventDefault(); return }
     if (event.key === 'v' && (event.metaKey || event.ctrlKey)) { terminal.cursor.paste(); event.preventDefault(); return }
@@ -109,11 +128,14 @@ function Commander (terminal) {
     if (event.keyCode === 37) { this.onArrowLeft(event.shiftKey, (event.metaKey || event.ctrlKey), event.altKey); return }
     if (event.keyCode === 39) { this.onArrowRight(event.shiftKey, (event.metaKey || event.ctrlKey), event.altKey); return }
 
+    if (event.keyCode === 9) { terminal.toggleHardmode(); event.preventDefault(); return }
+
     if (event.metaKey) { return }
     if (event.ctrlKey) { return }
 
     if (event.key === ' ' && terminal.cursor.mode === 0) { terminal.clock.togglePlay(); event.preventDefault(); return }
     if (event.key === 'Escape') { terminal.commander.stop(); terminal.clear(); terminal.isPaused = false; terminal.cursor.reset(); return }
+    if (event.key === 'Backspace') { terminal[this.isActive === true ? 'commander' : 'cursor'].erase(); event.preventDefault(); return }
 
     if (event.key === ']') { terminal.modGrid(1, 0); event.preventDefault(); return }
     if (event.key === '[') { terminal.modGrid(-1, 0); event.preventDefault(); return }
@@ -183,6 +205,10 @@ function Commander (terminal) {
 
   this.toString = function () {
     return `${this.query}`
+  }
+
+  function isColor (str) {
+    return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test('#' + str)
   }
 }
 

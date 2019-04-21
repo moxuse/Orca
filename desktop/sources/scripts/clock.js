@@ -36,6 +36,11 @@ function Clock (terminal) {
   // Controls
 
   this.togglePlay = function () {
+    // If in insert mode, insert space
+    if (terminal.cursor.mode === 1) {
+      terminal.cursor.move(1, 0)
+      return
+    }
     if (this.isPaused === true) {
       this.play()
     } else {
@@ -70,7 +75,7 @@ function Clock (terminal) {
     if (this.intervals.length === 8) {
       const sum = this.intervals.reduce((sum, interval) => { return sum + interval })
       const bpm = parseInt((1000 / sum) * 60)
-      if (Math.abs(bpm - this.speed.target) > 3) {
+      if (Math.abs(bpm - this.speed.target) > 1) {
         this.set(null, bpm)
       }
     }
@@ -89,6 +94,7 @@ function Clock (terminal) {
   }
 
   this.setTimer = function (bpm) {
+    console.log('Clock', `Setting new ${bpm} timer..`)
     this.clearTimer()
     this.timer = setInterval(() => { terminal.run(); this.update() }, (60000 / bpm) / 4)
   }
@@ -106,7 +112,7 @@ function Clock (terminal) {
 
   this.toString = function () {
     const diff = this.speed.target - this.speed.value
-    const _offset = diff > 0 ? `+${diff}` : diff < 0 ? diff : ''
+    const _offset = Math.abs(diff) > 5 ? (diff > 0 ? `+${diff}` : diff) : ''
     const _beat = diff === 0 && terminal.orca.f % 4 === 0 ? '*' : ''
     return `${this.speed.value}${_offset}${_beat}`
   }

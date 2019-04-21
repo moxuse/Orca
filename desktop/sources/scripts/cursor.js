@@ -16,6 +16,12 @@ function Cursor (terminal) {
     terminal.update()
   }
 
+  this.moveTo = function (x, y) {
+    this.x = clamp(x, 0, terminal.orca.w - 1)
+    this.y = clamp(y, 0, terminal.orca.h - 1)
+    terminal.update()
+  }
+
   this.scale = function (x, y) {
     this.w = clamp(this.w + x, 1, terminal.orca.w - this.x)
     this.h = clamp(this.h - y, 1, terminal.orca.h - this.y)
@@ -86,10 +92,6 @@ function Cursor (terminal) {
   }
 
   this.erase = function (key) {
-    if (terminal.commander.isActive === true) {
-      terminal.commander.erase()
-      return
-    }
     this.eraseBlock(this.x, this.y, this.w, this.h)
     if (this.mode === 1) { this.move(-1, 0) }
     terminal.history.record(terminal.orca.s)
