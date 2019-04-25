@@ -1,12 +1,12 @@
 # ORCΛ
 
-<img src='https://raw.githubusercontent.com/hundredrabbits/Orca/master/resources/logo.png' width="600"/>
+<img src='https://raw.githubusercontent.com/hundredrabbits/Orca/master/resources/logo.png?v=1' width="600"/>
 
 **Each letter of the alphabet is an operation**, <br />lowercase letters operate on bang, uppercase letters operate each frame. 
 
 **To learn more**, have a look at some projects created with [#ORCΛ](https://twitter.com/hashtag/ORCΛ), watch the [introduction video](https://www.youtube.com/watch?v=RaI_TuISSJE), or check out the [examples](https://github.com/hundredrabbits/Orca/tree/master/examples) & [tutorials](TUTORIAL.md). If you need some help, visit the [forum](https://llllllll.co/t/orca-live-coding-tool/17689), or the [chatroom](https://talk.lurk.org/channel/orca). 
 
-If you're looking for a **light version of Orca**, visit [Orca-c](http://github.com/hundredrabbits/Orca-c). 
+If you're looking for a **portable distribution**, visit [Orca-c](http://github.com/hundredrabbits/Orca-c). 
 
 ## Install & Run
 
@@ -24,7 +24,7 @@ npm start
 ## Operators
 
 - `A` **add**: Outputs the sum of inputs.
-- `B` **bool**: Bangs if input is not empty, or 0.
+- `B` **bounce**: Bounces between two values based on the runtime frame.
 - `C` **clock**: Outputs a constant value based on the runtime frame.
 - `D` **delay**: Bangs on a fraction of the runtime frame.
 - `E` **east**: Moves eastward, or bangs.
@@ -113,16 +113,27 @@ You can **quickly inject orca files** into the currently active file, by using t
 
 ## Base36 Table
 
-Orca operates on a base of **36 increments**. Operators using numeric values will typically also operate on letters and convert them into values as per the following table. For instance `Dp` will bang every *24th frame*.
+Orca operates on a base of **36 increments**. Operators using numeric values will typically also operate on letters and convert them into values as per the following table. For instance `Dp` will bang every *24th frame*. 
 
-| 0     | 1     | 2     | 3     | 4     | 5     | 6     | 7     | 8     | 9     | A     | B      | 
+| **0** | **1** | **2** | **3** | **4** | **5** | **6** | **7** | **8** | **9** | **A** | **B**  | 
 | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | 
 | 0     | 1     | 2     | 3     | 4     | 5     | 6     | 7     | 8     | 9     | 10    | 11     |
 | **C** | **D** | **E** | **F** | **G** | **H** | **I** | **J** | **K** | **L** | **M** | **N**  |
-| 12    | 13    | 14    | 15    | 16    | 17    | 18    | 19    | 20    | 21    | 22    | 23     | 
+| 12    | 13    | 14    | 15    | 16    | 17    | 18    | 19    | 20    | 21    | 22    | 23     |
 | **O** | **P** | **Q** | **R** | **S** | **T** | **U** | **V** | **W** | **X** | **Y** | **Z**  | 
 | 24    | 25    | 26    | 27    | 28    | 29    | 30    | 31    | 32    | 33    | 34    | 35     |
 
+## Transpose Table
+
+The midi operator interprets any letter above the chromatic scale as a transpose value, for instance `3H`, is equivalent to `4C`.
+
+| **0** | **1** | **2** | **3** | **4** | **5** | **6** | **7** | **8** | **9** | **A** | **B**  | 
+| :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | 
+| _     | _     | _     | _     | _     | _     | _     | _     | _     | _     | A0    | B0     |
+| **C** | **D** | **E** | **F** | **G** | **H** | **I** | **J** | **K** | **L** | **M** | **N**  |
+| C0    | D0    | E0    | F0    | G0    | C1    | D1    | E1    | F1    | G1    | A1    | B1     | 
+| **O** | **P** | **Q** | **R** | **S** | **T** | **U** | **V** | **W** | **X** | **Y** | **Z**  | 
+| C2    | D2    | E2    | F2    | G2    | A3    | B3    | C4    | D4    | E4    | F4    | G4     | 
 
 ## Companion Applications
 
