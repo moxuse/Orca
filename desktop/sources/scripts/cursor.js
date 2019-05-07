@@ -76,8 +76,8 @@ function Cursor (terminal) {
     this.erase()
   }
 
-  this.paste = function () {
-    this.writeBlock(clipboard.readText().split(/\r?\n/))
+  this.paste = function (overlap = false) {
+    this.writeBlock(clipboard.readText().split(/\r?\n/), overlap)
   }
 
   this.read = function () {
@@ -97,7 +97,7 @@ function Cursor (terminal) {
     terminal.history.record(terminal.orca.s)
   }
 
-  this.goto = function (str) {
+  this.find = function (str) {
     const i = terminal.orca.s.indexOf(str)
     if (i < 0) { return }
     const pos = terminal.orca.posAt(i)
@@ -109,9 +109,9 @@ function Cursor (terminal) {
 
   this.trigger = function () {
     const operator = terminal.orca.operatorAt(this.x, this.y)
-    if (operator) {
-      operator.run(true)
-    }
+    if (!operator) { console.warn('Cursor', 'Nothing to trigger.'); return }
+    console.log('Cursor', 'Trigger: ' + operator.name)
+    operator.run(true)
   }
 
   this.toggleMode = function (val) {
@@ -151,13 +151,15 @@ function Cursor (terminal) {
     return block
   }
 
-  this.writeBlock = function (block, rect = this.toRect()) {
+  this.writeBlock = function (block, overlap = false) {
     if (!block || block.length === 0) { return }
+    const rect = this.toRect()
     let _y = rect.y
     for (const lineId in block) {
       let _x = rect.x
       for (const glyphId in block[lineId]) {
-        terminal.orca.write(_x, _y, block[lineId][glyphId])
+        const glyph = block[lineId][glyphId]
+        terminal.orca.write(_x, _y, overlap === true && glyph === '.' ? terminal.orca.glyphAt(_x, _y) : glyph)
         _x++
       }
       _y++

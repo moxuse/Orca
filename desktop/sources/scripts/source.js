@@ -2,6 +2,7 @@
 
 function Source (terminal) {
   const fs = require('fs')
+  const path = require('path')
   const { dialog, app } = require('electron').remote
 
   this.path = null
@@ -27,21 +28,22 @@ function Source (terminal) {
     this.read(paths[0])
   }
 
-  this.save = function (as = false) {
+  this.save = function (quitAfter = false) {
     console.log('Source', 'Save a file..')
-    if (this.path && !as) {
-      this.write(this.path)
+    if (this.path) {
+      this.write(this.path, this.generate(), quitAfter)
     } else {
-      this.saveAs()
+      this.saveAs(quitAfter)
     }
   }
-  this.saveAs = function () {
+
+  this.saveAs = function (quitAfter = false) {
     console.log('Source', 'Save a file as..')
     dialog.showSaveDialog((path) => {
       if (path === undefined) { return }
       if (path.indexOf('.orca') < 0) { path += '.orca' }
-      terminal.source.write(path)
-      terminal.source.path = path
+      this.write(path, this.generate(), quitAfter)
+      this.path = path
     })
   }
 
@@ -53,23 +55,79 @@ function Source (terminal) {
 
   // I/O
 
-  this.write = function (path, data = this.generate()) {
+  this.write = function (path, data = this.generate(), quitAfter = false) {
     console.log('Source', 'Writing ' + path)
-    fs.writeFile(path, data, (err) => {
-      if (err) { alert('An error ocurred updating the file' + err.message); console.warn(err) }
-      terminal.source.remember('active', path)
-    })
+    fs.writeFileSync(path, data)
+    terminal.source.remember('active', path)
+    if (quitAfter === true) {
+      app.exit()
+    }
   }
 
-  this.read = function (path) {
+  this.read = function (path = this.path) {
     if (!path) { return }
+    if (!fs.existsSync(path)) { console.warn('Source', 'File does not exist: ' + path); return }
     console.log('Source', 'Reading ' + path)
-    fs.readFile(path, 'utf8', (err, data) => {
-      if (err) { console.warn(err); terminal.source.new(); return }
-      terminal.source.path = path
-      terminal.source.remember('active', path)
-      terminal.load(this.parse(data))
+    this.path = path
+    this.remember('active', path)
+
+    //
+    const data = fs.readFileSync(path, 'utf8')
+    const lines = data.split('\n').map((line) => { return clean(line) })
+    const w = lines[0].length
+    const h = lines.length
+    const s = lines.join('\n').trim()
+
+    terminal.orca.load(w, h, s)
+    terminal.history.reset()
+    terminal.history.record(terminal.orca.s)
+    terminal.updateSize()
+  }
+
+  this.quit = function () {
+    if (this.hasChanges() === true) {
+      this.verify()
+    } else {
+      app.exit()
+    }
+  }
+
+  this.verify = function () {
+    let response = dialog.showMessageBox(app.win, {
+      type: 'question',
+      buttons: ['Cancel', 'Discard', 'Save'],
+      title: 'Confirm',
+      message: 'Unsaved data will be lost. Would you like to save your changes before leaving?',
+      icon: path.join(__dirname, '../../icon.png')
     })
+    if (response === 2) {
+      this.save(true)
+    } else if (response === 1) {
+      app.exit()
+    }
+  }
+
+  this.hasChanges = function () {
+    console.log('Source', 'Looking for changes..')
+    if (!this.path) {
+      console.log('Source', 'File is unsaved..')
+      if (terminal.orca.length() > 2) {
+        console.log('Source', `File is not empty.`)
+        return true
+      }
+    } else {
+      if (fs.existsSync(this.path)) {
+        console.log('Source', 'Comparing with last saved copy..')
+        const diff = isDifferent(fs.readFileSync(this.path, 'utf8'), this.generate())
+        if (diff === true) {
+          console.log('Source', 'File has been changed.')
+          return true
+        }
+      } else {
+        console.log('Source', 'File does not exist.')
+        return true
+      }
+    }
   }
 
   // LocalStorage
@@ -108,7 +166,7 @@ function Source (terminal) {
   }
 
   this.parse = function (text) {
-    const lines = text.split('\n')
+    const lines = text.split('\n').map((line) => { return clean(line) })
     const w = lines[0].length
     const h = lines.length
     const s = lines.join('\n').trim()
@@ -127,6 +185,19 @@ function Source (terminal) {
 
   this.toString = function () {
     return this.path ? this.name() : 'blank'
+  }
+
+  function isDifferent (a, b) {
+    return a.replace(/[^a-zA-Z0-9+]+/gi, '').trim() !== b.replace(/[^a-zA-Z0-9+]+/gi, '').trim()
+  }
+
+  function clean (s) {
+    let c = ''
+    for (let x = 0; x <= s.length; x++) {
+      const char = s.charAt(x)
+      c += !terminal.orca.isAllowed(char) ? '.' : char
+    }
+    return c
   }
 }
 

@@ -8,20 +8,15 @@ function OperatorI (orca, x, y, passive) {
   this.name = 'increment'
   this.info = 'Increments southward operator.'
 
-  this.ports.haste.min = { x: -1, y: 0 }
-  this.ports.input.max = { x: 1, y: 0 }
-  this.ports.output = { x: 0, y: 1 }
+  this.ports.haste.step = { x: -1, y: 0, default: '1' }
+  this.ports.input.mod = { x: 1, y: 0 }
+  this.ports.output = { x: 0, y: 1, sensitive: true }
 
-  this.run = function () {
-    const min = this.listen(this.ports.haste.min, true)
-    const max = this.listen(this.ports.input.max, true)
+  this.operation = function (force = false) {
+    const step = this.listen(this.ports.haste.step, true)
+    const mod = this.listen(this.ports.input.mod, true)
     const val = this.listen(this.ports.output, true)
-    if (min === max) { return }
-    const next = val + (min < max ? 1 : -1)
-    const _min = min < max ? min : max
-    const _max = min > max ? min : max
-    const res = next >= _max ? _min : next < _min ? _max - 1 : next
-    this.output(`${orca.keyOf(res)}`, false, true)
+    return orca.keyOf((val + step) % (mod > 0 ? mod : 36))
   }
 }
 

@@ -8,8 +8,8 @@ function OperatorL (orca, x, y, passive) {
   this.name = 'loop'
   this.info = 'Loops a number of eastward operators.'
 
+  this.ports.haste.step = { x: -2, y: 0, default: '1' }
   this.ports.haste.len = { x: -1, y: 0 }
-  this.ports.haste.rate = { x: -2, y: 0 }
 
   this.haste = function () {
     const len = this.listen(this.ports.haste.len, true)
@@ -18,19 +18,14 @@ function OperatorL (orca, x, y, passive) {
     }
   }
 
-  this.run = function () {
+  this.operation = function (force = false) {
+    const step = this.listen(this.ports.haste.step, true)
     const len = this.listen(this.ports.haste.len, true)
-    const rate = this.listen(this.ports.haste.rate, true)
-    const a = []
-    for (let x = 1; x <= len; x++) {
-      a.push(orca.glyphAt(this.x + x, this.y))
-    }
-    for (let x = 1; x <= rate; x++) {
-      a.push(a.shift())
-    }
-    for (const id in a) {
-      const x = parseInt(id) + 1
-      orca.write(this.x + x, this.y, a[id])
+    const index = orca.indexAt(this.x + 1, this.y)
+    const seg = orca.s.substr(index, len)
+    const string = seg.substr(step, len - step) + seg.substr(0, step)
+    for (let x = 0; x < len; x++) {
+      orca.write(this.x + x + 1, this.y, string.charAt(x))
     }
   }
 }

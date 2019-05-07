@@ -10,6 +10,8 @@ function Midi (terminal) {
   this.inputs = []
   this.stack = []
 
+  this.key = null
+
   this.start = function () {
     console.info('Midi Starting..')
     this.setup()
@@ -29,9 +31,9 @@ function Midi (terminal) {
       terminal.controller.add('default', 'Midi', `No Midi Outputs`)
     } else {
       for (const id in this.outputs) {
-        terminal.controller.add('default', 'Midi', `${this.outputs[id].name} ${terminal.io.midi.outputIndex === parseInt(id) ? ' — Output' : ''}`, () => { terminal.io.midi.selectOutput(id) }, '')
+        terminal.controller.add('default', 'Midi', `${this.outputs[id].name} Output ${terminal.io.midi.outputIndex === parseInt(id) ? ' — Active' : ''}`, () => { terminal.io.midi.selectOutput(id) }, '')
       }
-      terminal.controller.add('default', 'Midi', `No Output ${terminal.io.midi.outputIndex === -1 ? ' — Output' : ''}`, () => { terminal.io.midi.selectOutput(-1) }, '')
+      terminal.controller.add('default', 'Midi', `No Output ${terminal.io.midi.outputIndex === -1 ? ' — Active' : ''}`, () => { terminal.io.midi.selectOutput(-1) }, '')
       terminal.controller.addSpacer('default', 'Midi', 'spacer2')
     }
 
@@ -40,9 +42,9 @@ function Midi (terminal) {
       terminal.controller.add('default', 'Midi', `No Midi Inputs`)
     } else {
       for (const id in this.inputs) {
-        terminal.controller.add('default', 'Midi', `${this.inputs[id].name} ${terminal.io.midi.inputIndex === parseInt(id) ? ' — Input' : ''}`, () => { terminal.io.midi.selectInput(id) }, '')
+        terminal.controller.add('default', 'Midi', `${this.inputs[id].name} Input ${terminal.io.midi.inputIndex === parseInt(id) ? ' — Active' : ''}`, () => { terminal.io.midi.selectInput(id) }, '')
       }
-      terminal.controller.add('default', 'Midi', `No Input ${terminal.io.midi.inputIndex === -1 ? ' — Input' : ''}`, () => { terminal.io.midi.selectInput(-1) }, '')
+      terminal.controller.add('default', 'Midi', `No Input ${terminal.io.midi.inputIndex === -1 ? ' — Active' : ''}`, () => { terminal.io.midi.selectInput(-1) }, '')
     }
 
     terminal.controller.commit()
@@ -67,7 +69,7 @@ function Midi (terminal) {
 
     const channel = down === true ? 0x90 + item[0] : 0x80 + item[0]
     const note = clamp(24 + (item[1] * 12) + item[2], 0, 127)
-    const velocity = item[3]
+    const velocity = clamp(item[3], 0, 127)
 
     this.outputDevice().send([channel, note, velocity])
     item[5] = true
@@ -93,9 +95,20 @@ function Midi (terminal) {
     })
   }
 
+  // Keys
+
+  this.press = function (key) {
+    this.key = parseInt(key)
+  }
+
+  this.release = function () {
+    this.key = null
+  }
+
   // Clock
 
   this.ticks = []
+
   // TODO
   this.sendClock = function () {
     if (!this.outputDevice()) { return }
@@ -115,10 +128,18 @@ function Midi (terminal) {
 
   this.receive = function (msg) {
     switch (msg.data[0]) {
+      // Keys
+      case 0x90:
+        this.press(msg.data[1])
+        break
+      case 0x80:
+        this.release()
+        break
+      // Clock
       case 0xF8:
         this.count = (this.count + 1) % 6
         if (this.count % 4 === 0) {
-          terminal.clock.tap()
+          // terminal.clock.tap()
         }
         break
       case 0xFA:
@@ -135,22 +156,22 @@ function Midi (terminal) {
   // Tools
 
   this.selectOutput = function (id) {
-    if (id === -1) { this.outputIndex = -1; this.update(); return }
+    if (id === -1) { this.outputIndex = -1; console.log('Midi', `Select Output Device: None`); this.update(); return }
     if (!this.outputs[id]) { return }
 
     this.outputIndex = parseInt(id)
-    console.log('Midi', `Output Device: ${this.outputDevice().name}`)
+    console.log('Midi', `Select Output Device: ${this.outputDevice().name}`)
     this.update()
   }
 
   this.selectInput = function (id) {
     if (this.inputDevice()) { this.inputDevice().onmidimessage = null }
-    if (id === -1) { this.inputIndex = -1; this.update(); return }
+    if (id === -1) { this.inputIndex = -1; console.log('Midi', `Select Input Device: None`); this.update(); return }
     if (!this.inputs[id]) { return }
 
     this.inputIndex = parseInt(id)
     this.inputDevice().onmidimessage = (msg) => { this.receive(msg) }
-    console.log('Midi', `Input Device: ${this.inputDevice().name}`)
+    console.log('Midi', `Select Input Device: ${this.inputDevice().name}`)
     this.update()
   }
 
@@ -166,7 +187,6 @@ function Midi (terminal) {
 
   this.setup = function () {
     if (!navigator.requestMIDIAccess) { return }
-    this.outputs = []
     navigator.requestMIDIAccess({ sysex: false }).then(this.access, (err) => {
       console.warn('No Midi', err)
     })
@@ -174,12 +194,14 @@ function Midi (terminal) {
 
   this.access = function (midiAccess) {
     const outputs = midiAccess.outputs.values()
+    terminal.io.midi.outputs = []
     for (let i = outputs.next(); i && !i.done; i = outputs.next()) {
       terminal.io.midi.outputs.push(i.value)
     }
     terminal.io.midi.selectOutput(0)
 
     const inputs = midiAccess.inputs.values()
+    terminal.io.midi.inputs = []
     for (let i = inputs.next(); i && !i.done; i = inputs.next()) {
       terminal.io.midi.inputs.push(i.value)
     }

@@ -9,20 +9,31 @@ function OperatorUdp (orca, x, y, passive) {
   this.info = 'Sends a UDP message.'
 
   this.haste = function () {
-    this.msg = ''
     for (let x = 1; x <= 36; x++) {
       const g = orca.glyphAt(this.x + x, this.y)
       if (g === '.') { break }
       orca.lock(this.x + x, this.y)
-      this.msg += g
     }
   }
 
-  this.run = function (force = false) {
-    if (!this.bang() && force === false) { return }
-    if (this.msg === '') { return }
+  this.operation = function (force = false) {
+    if (!this.hasNeighbor('*') && force === false) { return }
+
+    let msg = ''
+    for (let x = 1; x <= 36; x++) {
+      const g = orca.glyphAt(this.x + x, this.y)
+      if (g === '.') { break }
+      msg += g
+    }
+
+    if (msg === '') { return }
+
     this.draw = false
-    terminal.io.udp.send(this.msg)
+    terminal.io.udp.send(msg)
+
+    if (force === true) {
+      terminal.io.udp.run()
+    }
   }
 }
 

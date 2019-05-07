@@ -11,9 +11,10 @@ function Terminal () {
   const Theme = require('./lib/theme')
   const Controller = require('./lib/controller')
 
+  this.version = 112
   this.library = require('../../core/library')
 
-  this.orca = new Orca()
+  this.orca = new Orca(this)
   this.io = new IO(this)
   this.cursor = new Cursor(this)
   this.source = new Source(this)
@@ -60,17 +61,6 @@ function Terminal () {
     this.update()
   }
 
-  this.load = function (orca, frame = 0) {
-    this.history.reset()
-    this.orca = orca
-    this.setSize({ w: orca.w * this.tile.w, h: orca.h * this.tile.h })
-    this.update()
-  }
-
-  this.unload = function () {
-    this.io.midi.silence()
-  }
-
   this.update = function () {
     this.clear()
     this.ports = this.findPorts()
@@ -89,9 +79,21 @@ function Terminal () {
   }
 
   this.setSize = function (size) {
-    console.log(`Set Size: ${size.w}x${size.h}`)
-    require('electron').remote.getCurrentWindow().setSize(parseInt(size.w + 60), parseInt(size.h + 60 + this.tile.h), false)
+    const win = require('electron').remote.getCurrentWindow()
+    const winSize = win.getSize()
+    const targetSize = [parseInt(size.w + 60), parseInt(size.h + 60 + this.tile.h)]
+
+    if (winSize[0] === targetSize[0] && winSize[1] === targetSize[1]) { return }
+
+    console.log(`Window Size: ${targetSize[0]}x${targetSize[1]}, from ${winSize[0]}x${winSize[1]}`)
+
+    win.setSize(targetSize[0], targetSize[1], false)
     this.resize()
+  }
+
+  this.updateSize = function () {
+    console.log('Terminal', 'Update size')
+    this.setSize({ w: this.orca.w * this.tile.w, h: this.orca.h * this.tile.h })
   }
 
   this.toggleRetina = function () {
@@ -232,26 +234,28 @@ function Terminal () {
 
   this.drawInterface = function () {
     const col = this.grid.w
+    const variables = Object.keys(this.orca.variables).join('')
     // Cursor
     this.write(`${this.cursor.x},${this.cursor.y}${this.cursor.mode === 1 ? '+' : ''}`, col * 0, 1, this.grid.w, this.cursor.mode === 1 ? 1 : 2)
     this.write(`${this.cursor.w}:${this.cursor.h}`, col * 1, 1, this.grid.w)
     this.write(`${this.cursor.inspect()}`, col * 2, 1, this.grid.w)
     this.write(`${this.orca.f}f${this.isPaused ? '*' : ''}`, col * 3, 1, this.grid.w)
-    this.write(`${this.orca.inspect(this.grid.w)}`, col * 4, 1, this.grid.w)
-
+    this.write(`${display(variables, this.orca.f, this.grid.w)}`, col * 4, 1, this.grid.w)
     // Grid
     this.write(`${this.orca.w}x${this.orca.h}`, col * 0, 0, this.grid.w)
     this.write(`${this.grid.w}/${this.grid.h}`, col * 1, 0, this.grid.w)
     this.write(`${this.source}`, col * 2, 0, this.grid.w)
-    this.write(`${this.clock}`, col * 3, 0, this.grid.w, this.io.midi.inputIndex > -1 ? 1 : 2)
+    this.write(`${this.clock}`, col * 3, 0, this.grid.w, this.io.midi.inputIndex > -1 ? 4 : 2)
     this.write(`${this.io.inspect(this.grid.w)}`, col * 4, 0, this.grid.w)
 
-    if (this.orca.f < 25) {
+    if (this.orca.f < 20) {
       this.write(`${this.io.midi}`, col * 5, 0, this.grid.w * 2)
     }
 
     if (this.commander.isActive === true) {
       this.write(`${this.commander.query}${this.orca.f % 2 === 0 ? '_' : ''}`, col * 5, 1, this.grid.w * 2, 1)
+    } else if (this.orca.f < 8 && this.orca.f % 2 === 0) {
+      this.write(`v${this.version}`, col * 5, 1, this.grid.w * 2, 5)
     }
   }
 
@@ -295,7 +299,7 @@ function Terminal () {
     if (this.cursor.x >= tiles.w) { this.cursor.x = tiles.w - 1 }
     if (this.cursor.y >= tiles.h) { this.cursor.y = tiles.h - 1 }
 
-    console.log(`Resize to: ${tiles.w}x${tiles.h}`)
+    console.log(`Resized to: ${tiles.w}x${tiles.h}`)
 
     this.el.width = this.tile.w * this.orca.w * this.scale
     this.el.height = (this.tile.h + (this.tile.h / 5)) * this.orca.h * this.scale
@@ -358,6 +362,8 @@ function Terminal () {
 
   // Helpers
 
+  function display (str, f, max) { return str.length < max ? str : str.slice(f % str.length) + str.substr(0, f % str.length) }
+  function fill (str, len, chr) { while (str.length < len) { str += chr }; return str }
   function clamp (v, min, max) { return v < min ? min : v > max ? max : v }
 }
 

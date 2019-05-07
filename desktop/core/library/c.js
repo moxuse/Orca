@@ -8,16 +8,15 @@ function OperatorC (orca, x, y, passive) {
   this.name = 'clock'
   this.info = 'Outputs a constant value based on the runtime frame.'
 
-  this.ports.haste.rate = { x: -1, y: 0 }
-  this.ports.input.mod = { x: 1, y: 0 }
-  this.ports.output = { x: 0, y: 1 }
+  this.ports.haste.rate = { x: -1, y: 0, clamp: { min: 1 } }
+  this.ports.input.mod = { x: 1, y: 0, default: '8' }
+  this.ports.output = { x: 0, y: 1, sensitive: true }
 
-  this.run = function () {
-    const rate = this.listen(this.ports.haste.rate, true, 1)
+  this.operation = function (force = false) {
+    const rate = this.listen(this.ports.haste.rate, true)
     const mod = this.listen(this.ports.input.mod, true)
-    const val = (Math.floor(orca.f / rate) % (mod || 8))
-    const res = orca.keyOf(val)
-    this.output(`${res}`, false, true)
+    const val = (Math.floor(orca.f / rate) % mod)
+    return orca.keyOf(val)
   }
 }
 

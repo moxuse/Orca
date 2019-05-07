@@ -8,16 +8,15 @@ function OperatorD (orca, x, y, passive) {
   this.name = 'delay'
   this.info = 'Bangs on a fraction of the runtime frame.'
 
-  this.ports.haste.rate = { x: -1, y: 0 }
-  this.ports.input.mod = { x: 1, y: 0 }
-  this.ports.output = { x: 0, y: 1 }
+  this.ports.haste.rate = { x: -1, y: 0, clamp: { min: 1 } }
+  this.ports.input.mod = { x: 1, y: 0, default: '8' }
+  this.ports.output = { x: 0, y: 1, bang: true }
 
-  this.run = function () {
-    const rate = this.listen(this.ports.haste.rate, true, 1)
+  this.operation = function (force = false) {
+    const rate = this.listen(this.ports.haste.rate, true)
     const mod = this.listen(this.ports.input.mod, true)
-    const val = orca.f % ((mod || 8) * rate)
-    const res = val === 0 || mod === 1 ? '*' : '.'
-    this.output(`${res}`)
+    const res = orca.f % (mod * rate)
+    return res === 0 || mod === 1
   }
 }
 

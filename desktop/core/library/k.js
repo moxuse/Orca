@@ -21,11 +21,10 @@ function OperatorK (orca, x, y, passive) {
     }
   }
 
-  this.run = function () {
-    const a = []
+  this.operation = function (force = false) {
     for (let x = 1; x <= this.len; x++) {
       const key = orca.glyphAt(this.x + x, this.y)
-      orca.write(this.x + x, this.y + 1, orca.values[key])
+      orca.write(this.x + x, this.y + 1, orca.valueIn(key))
     }
   }
 }

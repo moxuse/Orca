@@ -10,10 +10,10 @@ function OperatorQ (orca, x, y, passive) {
 
   this.ports.haste.x = { x: -3, y: 0 }
   this.ports.haste.y = { x: -2, y: 0 }
-  this.ports.haste.len = { x: -1, y: 0 }
+  this.ports.haste.len = { x: -1, y: 0, clamp: { min: 1 } }
 
   this.haste = function () {
-    const len = this.listen(this.ports.haste.len, true, 1)
+    const len = this.listen(this.ports.haste.len, true)
     const x = this.listen(this.ports.haste.x, true)
     const y = this.listen(this.ports.haste.y, true)
     for (let i = 1; i <= len; i++) {
@@ -21,18 +21,18 @@ function OperatorQ (orca, x, y, passive) {
     }
   }
 
-  this.run = function () {
-    const len = this.listen(this.ports.haste.len, true, 1)
+  this.operation = function (force = false) {
+    const len = this.listen(this.ports.haste.len, true)
     const x = this.listen(this.ports.haste.x, true)
     const y = this.listen(this.ports.haste.y, true)
     for (let i = 1; i <= len; i++) {
-      this.ports.input[`val${i}`] = { x: x + i, y: y }
+      this.ports.haste[`val${i}`] = { x: x + i, y: y }
       orca.lock(this.x + x + i, this.y + y)
-      this.ports.output = { x: i - len, y: 1, unlock: true }
-      const res = this.listen(this.ports.input[`val${i}`])
-      this.output(`${res}`, true)
+      this.ports.output = { x: i - len, y: 1 }
+      const res = this.listen(this.ports.haste[`val${i}`])
+      this.output(`${res}`)
     }
-    this.ports.output = { x: 0, y: 1, unlock: true }
+    this.ports.output = { x: 0, y: 1 }
   }
 }
 

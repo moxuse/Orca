@@ -45,7 +45,7 @@ function Commander (terminal) {
       if (isColor(parts[1])) { terminal.theme.active.b_inv = '#' + parts[1] }
       if (isColor(parts[2])) { terminal.theme.active.b_high = '#' + parts[2] }
     },
-    'goto': (val) => { terminal.cursor.goto(val) },
+    'find': (val) => { terminal.cursor.find(val) },
     'move': (val) => {
       const pos = val.split(';')
       const x = parseInt(pos[0])
@@ -117,7 +117,8 @@ function Commander (terminal) {
     // Copy/Paste
     if (event.keyCode === 67 && (event.metaKey || event.ctrlKey)) { terminal.cursor.copy(); event.preventDefault(); return }
     if (event.keyCode === 88 && (event.metaKey || event.ctrlKey)) { terminal.cursor.cut(); event.preventDefault(); return }
-    if (event.keyCode === 86 && (event.metaKey || event.ctrlKey)) { terminal.cursor.paste(); event.preventDefault(); return }
+    if (event.keyCode === 86 && (event.metaKey || event.ctrlKey) && event.shiftKey) { terminal.cursor.paste(true); event.preventDefault(); return }
+    if (event.keyCode === 86 && (event.metaKey || event.ctrlKey)) { terminal.cursor.paste(false); event.preventDefault(); return }
     if (event.keyCode === 65 && (event.metaKey || event.ctrlKey)) { terminal.cursor.selectAll(); event.preventDefault(); return }
 
     // Undo/Redo

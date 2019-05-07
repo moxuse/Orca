@@ -2,11 +2,11 @@
 
 const Operator = require('../operator')
 
-function OperatorMidi (orca, x, y, passive) {
+function OperatorMono (orca, x, y, passive) {
   Operator.call(this, orca, x, y, ':', true)
 
-  this.name = 'midi'
-  this.info = 'Sends a MIDI note.'
+  this.name = 'mono'
+  this.info = 'Sends MIDI note to a monophonic instrument.'
 
   this.ports.input.channel = { x: 1, y: 0, clamp: { min: 0, max: 16 } }
   this.ports.input.octave = { x: 2, y: 0, clamp: { min: 0, max: 8 } }
@@ -37,12 +37,12 @@ function OperatorMidi (orca, x, y, passive) {
 
     this.draw = false
 
-    terminal.io.midi.send(channel, octave, note, velocity, length)
+    terminal.io.mono.send(channel, octave, note, velocity, length)
 
     if (force === true) {
-      terminal.io.midi.run()
+      terminal.io.mono.run()
     }
   }
 }
 
-module.exports = OperatorMidi
+module.exports = OperatorMono

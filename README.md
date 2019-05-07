@@ -35,32 +35,48 @@ npm start
 - `J` **jumper**: Outputs the northward operator.
 - `K` **konkat**: Outputs multiple variables.
 - `L` **loop**: Loops a number of eastward operators.
-- `M` **modulo**: Outputs the modulo of input.
+- `M` **multiply**: Outputs the product of inputs.
 - `N` **north**: Moves Northward, or bangs.
-- `O` **offset**: Reads a distant operator with offset.
+- `O` **read**: Reads a distant operator with offset.
 - `P` **push**: Writes an eastward operator with offset.
 - `Q` **query**: Reads distant operators with offset.
 - `R` **random**: Outputs a random value.
 - `S` **south**: Moves southward, or bangs.
 - `T` **track**: Reads an eastward operator with offset.
-- `U` **uturn**: Reverses movement of inputs.
+- `U` **uturn**: Releases input on bang.
 - `V` **variable**: Reads and write globally available variables.
 - `W` **west**: Moves westward, or bangs.
-- `X` **teleport**: Writes a distant operator with offset.
+- `X` **write**: Writes a distant operator with offset.
 - `Y` **jymper**: Outputs the westward operator.
 - `Z` **zoom**: Moves eastwardly, respawns west on collision.
 - `*` **bang**: Bangs neighboring operators.
 - `#` **comment**: Comments a line, or characters until the next hash.
+
+### IO
+
+#### Send
+
 - `:` **midi**: Sends a MIDI note.
-- `^` **cc**: Sends a MIDI CC value.
+- `!` **cc**: Sends a MIDI CC value.
+- `%` **mono**: Sends a Monophonic MIDI value.
 - `;` **udp**: Sends a UDP message.
 - `=` **osc**: Sends a OSC message.
+
+#### Receive
+
+- `&` **keys**: Receives a MIDI note.
 
 ## MIDI
 
 The [MIDI](https://en.wikipedia.org/wiki/MIDI) operator `:` takes up to 5 inputs('channel, 'octave, 'note, velocity, length). 
 
 For example, `:25C`, is a **C note, on the 5th octave, through the 3rd MIDI channel**, `:04c`, is a **C# note, on the 4th octave, through the 1st MIDI channel**. Velocity is an optional value from `0`(0/127) to `g`(127/127). Note length is the number of frames during which a note remains active. See it in action with [midi.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/_midi.orca).
+
+## MIDI MONO
+
+The [MIDI](https://en.wikipedia.org/wiki/MIDI) operator `%` takes up to 5 inputs('channel, 'octave, 'note, velocity, length). 
+
+This operator is very similar to the default Midi operator, but **each new note will stop the previously playing note**, would its length overlap with the new one. Making certain that only a single note is ever played at once, this is ideal for monophonic analog synthetisers that might struggle to dealing with chords and note overlaps.
 
 ## MIDI CC
 
@@ -100,7 +116,7 @@ All commands have a shorthand equivalent to their first character, for example, 
 - `stop` Stops program.
 - `run` Runs current frame.
 - `time:0` Sets the frame value to `0`.
-- `goto:aV` Sends cursor to string `aV`.
+- `find:aV` Sends cursor to string `aV`.
 - `move:3;4` Move cursor to position `3,4`.
 - `bpm:140` Sets bpm speed to `140`.
 - `apm:160` Animates bpm speed to `160`.
@@ -125,15 +141,15 @@ Orca operates on a base of **36 increments**. Operators using numeric values wil
 
 ## Transpose Table
 
-The midi operator interprets any letter above the chromatic scale as a transpose value, for instance `3H`, is equivalent to `4C`.
+The midi operator interprets any letter above the chromatic scale as a transpose value, for instance `3H`, is equivalent to `4A`.
 
 | **0** | **1** | **2** | **3** | **4** | **5** | **6** | **7** | **8** | **9** | **A** | **B**  | 
 | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | 
 | _     | _     | _     | _     | _     | _     | _     | _     | _     | _     | A0    | B0     |
 | **C** | **D** | **E** | **F** | **G** | **H** | **I** | **J** | **K** | **L** | **M** | **N**  |
-| C0    | D0    | E0    | F0    | G0    | C1    | D1    | E1    | F1    | G1    | A1    | B1     | 
+| C0    | D0    | E0    | F0    | G0    | A0    | B0    | C1    | D1    | E1    | F1    | G1     | 
 | **O** | **P** | **Q** | **R** | **S** | **T** | **U** | **V** | **W** | **X** | **Y** | **Z**  | 
-| C2    | D2    | E2    | F2    | G2    | A3    | B3    | C4    | D4    | E4    | F4    | G4     | 
+| A1    | B1    | C2    | D2    | E2    | F2    | G2    | A2    | B2    | C3    | D3    | E3     | 
 
 ## Companion Applications
 
@@ -145,6 +161,7 @@ The midi operator interprets any letter above the chromatic scale as a transpose
 
 - [Japanese](https://qiita.com/rucochanman/items/98a4ea988ae99e04b333)
 - [German](http://tropone.de/2019/03/13/orca-ein-sequenzer-der-kryptischer-nicht-aussehen-kann-und-ein-versuch-einer-anleitung/)
+- [French](http://makingsound.fr/blog/orca-sequenceur-modulaire/)
 
 ## Extras
 

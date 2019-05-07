@@ -1,6 +1,6 @@
 # Tutorial
 
-If this is your first time trying out **Orca**, watch this [introduction video](https://www.youtube.com/watch?v=RaI_TuISSJE). 
+If this is your first time trying out **Orca**, watch this [introduction video](https://www.youtube.com/watch?v=RaI_TuISSJE). If you want to learn how to use a handful of basic operators, have a look at the [workshop](WORKSHOP.md).
 
 ## General
 
@@ -17,7 +17,7 @@ To send [Midi notes](https://github.com/hundredrabbits/Orca#midi) to [Ableton Li
 - Select `IAC Driver(Bus 1)`(OSX), or `LoopMidi`(Windows), in the instrument's inputs dropdown.
 - Activate the **In** toggle, on the instrument track.
 
-## Bitwig
+## Bitwig [Linux and JACK]
 
 The following is taken from this page: https://answers.bitwig.com/questions/1218/how-do-i-get-midi-inout-of-bws-on-linux
 
@@ -29,7 +29,7 @@ The following is taken from this page: https://answers.bitwig.com/questions/1218
 - Run sudo modprobe snd_virmidi midi_devs=1 (to enable virtual midi with one device which is easier to understand for now)
 - Start qjacktl
 - Start jack
-- Open Connections: Connect device on left "0: QuNexus MIDI 1" to "0:VirMIDI 5-0"
+- Open Connections: Connect device on left "0: QuNexus MIDI 1" (as an example) to "0:VirMIDI 5-0"
 - Open Bitwig
 - Under Options > Preferences > Controllers click "Add controller manually"
 - Choose "Generic MIDI Keyboard"
@@ -37,7 +37,7 @@ The following is taken from this page: https://answers.bitwig.com/questions/1218
 
 ## SonicPi
 
-To send [OSC messages](https://github.com/hundredrabbits/Orca#osc) to [SonicPi](http://sonic-pi.net), select [port 4559](https://github.com/hundredrabbits/Orca#osc). SonicPi listens to the address defined in `sync`, to send to the `live_loop`, bang the OSC node `=`, like `=a`. Have a look at [sonicpi.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/projects/sonicpi.orca) to see it in action.
+To send [OSC messages](https://github.com/hundredrabbits/Orca#osc) to [SonicPi](http://sonic-pi.net), select [port 4559](https://github.com/hundredrabbits/Orca#osc). SonicPi listens to the address defined in `sync`, to send to the `live_loop`, bang the OSC node `=`, like `=a`. Have a look at [sonicpi.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/software/sonicpi.orca) to see it in action.
 
 ```
 live_loop :drum do
@@ -49,7 +49,7 @@ end
 
 ## Dotgrid
 
-To send [UDP messages](https://github.com/hundredrabbits/Orca#udp) to [Dotgrid](http://github.com/hundredrabbits/Dotgrid), select [port 49160](https://github.com/hundredrabbits/Orca#udp). To draw lines on Dotgrid, you need to bang the UDP node `;` with different [commands](https://github.com/hundredrabbits/Dotgrid/blob/master/desktop/sources/scripts/listener.js). Have a look at [dotgrid.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/projects/dotgrid.orca) to see it in action.
+To send [UDP messages](https://github.com/hundredrabbits/Orca#udp) to [Dotgrid](http://github.com/hundredrabbits/Dotgrid), select [port 49160](https://github.com/hundredrabbits/Orca#udp). To draw lines on Dotgrid, you need to bang the UDP node `;` with different [commands](https://github.com/hundredrabbits/Dotgrid/blob/master/desktop/sources/scripts/listener.js). Have a look at [dotgrid.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/software/dotgrid.orca) to see it in action.
 
 - `;0`, clear layer **#1**.
 - `;0l1234`, add a line from `1,2` to `3,4`.
@@ -67,101 +67,4 @@ Here's a list of supported operations.
 
 ## Pilot
 
-[Pilot](https://github.com/hundredrabbits/Pilot) is a minimalist synth software designed to work via UDP, and to quickly get started with Orca. Remember that **Pilot uses UDP instead of MIDI**. Have a look at [pilot.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/projects/pilot.orca) to see how it should be used.
-
-## Patterns
-
-Here's a collection of recurring patterns in the design of Orca machines.
-
-### J Funnel
-
-Move two horizontal values next to each other.
-
-```
-.1Y12.
-...JJ.
-..A12.
-..3...
-```
-
-### X Stack
-
-Move two vertical values next to each other.
-
-```
-.21X1..
-.10X2..
-...A21.
-...3...
-```
-
-### Y Projector
-
-A very simple projector using a yumper.
-
-```
-..D4..
-.H*...
-.Ey.E.
-......
-```
-
-### U Loop
-
-A rotating effector.
-
-```
-...U..
-.U....
-....U.
-..U...
-```
-
-### Capacitor
-
-Banging the lowercase `i` charges it, discharges a bang each n-1 times, n is 9 in the example.
-
-```
-3O.....
-..Y.i09
-..F01..
-.......
-```
-
-### One Shot Counter
-
-Banging the lowercase `x` triggers it, count ranges from the right `x` input to the last right `F` input.
-
-```
-24x0...
-14O....
-.F88...
-.*Y*h..
-....I0z
-```
-
-### Increment Major Note
-
-This technique does not use a lookup table.
-
-```
-...AC8
-..AKq.
-.Ma7..
-A3A...
-D.....
-```
-
-## Families
-
-| Families                                               | Glyphs
-| ----------                                             | -----------
-| Directions                                             | N S E W Z
-| [Math](https://www.youtube.com/watch?v=CR1TMGYhCoE)    | A F I M R
-| Writers                                                | G P X
-| Readers                                                | Q T O
-| [Jumpers](https://www.youtube.com/watch?v=CR1TMGYhCoE) | J Y
-| Timers                                                 | C D
-| Variables                                              | K V
-| Misc                                                   | B H L U
-| Special                                                | * # ; : =
+[Pilot](https://github.com/hundredrabbits/Pilot) is a minimalist synth software designed to work via UDP, and to quickly get started with Orca. Remember that **Pilot uses UDP instead of MIDI**. Have a look at [pilot.orca](https://github.com/hundredrabbits/Orca/blob/master/examples/software/pilot.orca) to see how it should be used.
