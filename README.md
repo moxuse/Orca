@@ -43,12 +43,12 @@ npm start
 - `R` **random**: Outputs a random value.
 - `S` **south**: Moves southward, or bangs.
 - `T` **track**: Reads an eastward operator with offset.
-- `U` **uturn**: Releases input on bang.
+- `U` **uclid**: Bangs at a rate defined by the [Euclidean pattern](http://www-cgrl.cs.mcgill.ca/~godfried/publications/banff.pdf).
 - `V` **variable**: Reads and write globally available variables.
 - `W` **west**: Moves westward, or bangs.
 - `X` **write**: Writes a distant operator with offset.
 - `Y` **jymper**: Outputs the westward operator.
-- `Z` **zoom**: Moves eastwardly, respawns west on collision.
+- `Z` **lerp**: Transitions southward operator toward input.
 - `*` **bang**: Bangs neighboring operators.
 - `#` **comment**: Comments a line, or characters until the next hash.
 
@@ -80,9 +80,9 @@ This operator is very similar to the default Midi operator, but **each new note 
 
 ## MIDI CC
 
-The [MIDI CC](https://www.sweetwater.com/insync/continuous-controller/) operator `^` takes 3 inputs('channel, 'knob, 'value).
+The [MIDI CC](https://www.sweetwater.com/insync/continuous-controller/) operator `!` takes 3 inputs('channel, 'knob, 'value).
 
-It sends a value **between 0-127**, where the value is calculated as a ratio of 36, over a maximum of 127. For example, `^008`, is sending **28**, or `(8/36)*127` through the first channel, to the control mapped with `id0`. You can press **enter**, with the `^` operator selected, to assign it to a controller.
+It sends a value **between 0-127**, where the value is calculated as a ratio of 36, over a maximum of 127. For example, `!008`, is sending **28**, or `(8/36)*127` through the first channel, to the control mapped with `id0`. You can press **enter**, with the `!` operator selected, to assign it to a controller.
 
 ## UDP
 

@@ -11,7 +11,7 @@ function Terminal () {
   const Theme = require('./lib/theme')
   const Controller = require('./lib/controller')
 
-  this.version = 112
+  this.version = 114
   this.library = require('../../core/library')
 
   this.orca = new Orca(this)
@@ -363,7 +363,6 @@ function Terminal () {
   // Helpers
 
   function display (str, f, max) { return str.length < max ? str : str.slice(f % str.length) + str.substr(0, f % str.length) }
-  function fill (str, len, chr) { while (str.length < len) { str += chr }; return str }
   function clamp (v, min, max) { return v < min ? min : v > max ? max : v }
 }
 
