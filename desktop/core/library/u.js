@@ -1,15 +1,15 @@
 'use strict'
 
-const Operator = require('../operator')
+import Operator from '../operator.js'
 
-function OperatorU (orca, x, y, passive) {
+export default function OperatorU (orca, x, y, passive) {
   Operator.call(this, orca, x, y, 'u', passive)
 
   this.name = 'Uclid'
   this.info = 'Bangs based on the Euclidean pattern.'
 
   this.ports.haste.step = { x: -1, y: 0, clamp: { min: 1 } }
-  this.ports.input.max = { x: 1, y: 0, clamp: { min: 1 } }
+  this.ports.input.max = { x: 1, y: 0, clamp: { min: 1 }, default: '8' }
   this.ports.output = { x: 0, y: 1, bang: true }
 
   this.operation = function (force = false) {
@@ -36,5 +36,3 @@ function OperatorU (orca, x, y, passive) {
     return sequence[orca.f % sequence.length] === 1
   }
 }
-
-module.exports = OperatorU

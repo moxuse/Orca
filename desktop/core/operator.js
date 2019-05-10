@@ -1,8 +1,8 @@
 'use strict'
 
-const transpose = require('./transpose')
+import transpose from './transpose.js'
 
-function Operator (orca, x, y, glyph = '.', passive = false) {
+export default function Operator (orca, x, y, glyph = '.', passive = false) {
   this.name = 'unknown'
   this.x = x
   this.y = y
@@ -125,7 +125,7 @@ function Operator (orca, x, y, glyph = '.', passive = false) {
     }
     if (this.ports.output) {
       const port = this.ports.output
-      a.push([this.x + port.x, this.y + port.y, 3, `${this.glyph}-output`])
+      a.push([this.x + port.x, this.y + port.y, port.reader || port.bang ? 8 : 3, `${this.glyph}-output`])
     }
     return a
   }
@@ -161,5 +161,3 @@ function Operator (orca, x, y, glyph = '.', passive = false) {
 
   function clamp (v, min, max) { return v < min ? min : v > max ? max : v }
 }
-
-module.exports = Operator

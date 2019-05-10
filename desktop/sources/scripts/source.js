@@ -1,6 +1,6 @@
 'use strict'
 
-function Source (terminal) {
+export default function Source (terminal) {
   const fs = require('fs')
   const path = require('path')
   const { dialog, app } = require('electron').remote
@@ -53,6 +53,21 @@ function Source (terminal) {
     this.read(this.path)
   }
 
+  this.inject = function (name, paste = false) {
+    if (!this.path) { console.warn('Source', 'Not in a project.'); return }
+    const loc = path.join(this.folder(), name + '.orca')
+    if (!fs.existsSync(loc)) { return }
+    const data = fs.readFileSync(loc, 'utf8')
+    if (!data) { return }
+    const lines = data.split('\n')
+    if (paste === true) {
+      terminal.cursor.writeBlock(lines)
+      terminal.cursor.reset()
+    } else {
+      terminal.cursor.resize(lines[0].length, lines.length)
+    }
+  }
+
   // I/O
 
   this.write = function (loc, data = this.generate(), quitAfter = false) {
@@ -71,7 +86,6 @@ function Source (terminal) {
     this.path = loc
     this.remember('active', loc)
 
-    //
     const data = fs.readFileSync(loc, 'utf8')
     const lines = data.split('\n').map((line) => { return clean(line) })
     const w = lines[0].length
@@ -98,7 +112,7 @@ function Source (terminal) {
       buttons: ['Cancel', 'Discard', 'Save'],
       title: 'Confirm',
       message: 'Unsaved data will be lost. Would you like to save your changes before leaving?',
-      icon: path.join(__dirname, '../../icon.png')
+      icon: path.join(__dirname, '../icon.png')
     })
     if (response === 2) {
       this.save(true)
@@ -170,6 +184,12 @@ function Source (terminal) {
     return terminal.orca.load(w, h, s)
   }
 
+  this.locate = function (name) {
+    if (!this.path) { return }
+    const loc = path.join(this.folder(), name)
+    return fs.existsSync(loc) ? loc : null
+  }
+
   // Etc
 
   this.name = function () {
@@ -197,5 +217,3 @@ function Source (terminal) {
     return c
   }
 }
-
-module.exports = Source

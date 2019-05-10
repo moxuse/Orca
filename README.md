@@ -74,7 +74,7 @@ For example, `:25C`, is a **C note, on the 5th octave, through the 3rd MIDI chan
 
 ## MIDI MONO
 
-The [MIDI](https://en.wikipedia.org/wiki/MIDI) operator `%` takes up to 5 inputs('channel, 'octave, 'note, velocity, length). 
+The [MONO](https://en.wikipedia.org/wiki/Monophony) operator `%` takes up to 5 inputs('channel, 'octave, 'note, velocity, length). 
 
 This operator is very similar to the default Midi operator, but **each new note will stop the previously playing note**, would its length overlap with the new one. Making certain that only a single note is ever played at once, this is ideal for monophonic analog synthetisers that might struggle to dealing with chords and note overlaps.
 
@@ -100,7 +100,7 @@ For example, `=1abc` will send `10`, `11` and `12` to `/1`, via the port `49162`
 
 ## Advanced Controls
 
-Some of Orca's features can be **controlled externally** via UDP though port `49160`, or via its own command-line interface. To activate the command-line prompt, press `CmdOrCtrl+K`. The prompt can also be used to inject patterns, to see the full list of patterns, see [patterns.js](https://github.com/hundredrabbits/Orca/blob/master/desktop/sources/scripts/patterns.js).
+Some of Orca's features can be **controlled externally** via UDP though port `49160`, or via its own command-line interface. To activate the command-line prompt, press `CmdOrCtrl+K`. The prompt can also be used to inject patterns, files that are located at the same location as the open file, see `get:`.
 
 ### Default Ports
 
@@ -120,6 +120,8 @@ All commands have a shorthand equivalent to their first character, for example, 
 - `move:3;4` Move cursor to position `3,4`.
 - `bpm:140` Sets bpm speed to `140`.
 - `apm:160` Animates bpm speed to `160`.
+- `inject:pattern` Inject the local file `pattern.orca`.
+- `graphic:123` Set the background to the local graphic `123.jpg`.
 - `write:H12;34` Writes glyph `H`, at `12,34`.
 - `color:f00;0f0;00f` Colorizes the interface.
 

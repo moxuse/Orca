@@ -1,11 +1,66 @@
 'use strict'
 
-function Commander (terminal) {
-  const Patterns = require('./patterns')
-  this.patterns = new Patterns(terminal)
-
+export default function Commander (terminal) {
   this.isActive = false
   this.query = ''
+
+  // Library
+
+  this.operations = {
+    'apm': (val, run) => { terminal.clock.set(null, parseInt(val)) },
+    'bpm': (val, run) => { terminal.clock.set(parseInt(val), parseInt(val), true) },
+    'color': (val, run) => {
+      const parts = val.split(';')
+      if (isColor(parts[0])) { terminal.theme.active.b_med = '#' + parts[0] }
+      if (isColor(parts[1])) { terminal.theme.active.b_inv = '#' + parts[1] }
+      if (isColor(parts[2])) { terminal.theme.active.b_high = '#' + parts[2] }
+    },
+    'find': (val, run) => { terminal.cursor.find(val) },
+    'move': (val, run) => {
+      const pos = val.split(';')
+      terminal.cursor.moveTo(parseInt(pos[0]), parseInt(pos[1]))
+    },
+    'graphic': (val, run) => {
+      terminal.theme.setImage(terminal.source.locate(val + '.jpg'))
+    },
+    'inject': (val, run) => {
+      terminal.source.inject(val, run)
+    },
+    'play': (val, run) => { terminal.clock.play() },
+    'rot': (val, run) => {
+      const cols = terminal.cursor.getBlock()
+      for (const y in cols) {
+        for (const x in cols[y]) {
+          if (cols[y][x] === '.') { continue }
+          const isUC = cols[y][x] === cols[y][x].toUpperCase()
+          cols[y][x] = terminal.orca.keyOf(parseInt(val) + terminal.orca.valueOf(cols[y][x]))
+          if (isUC) {
+            cols[y][x] = cols[y][x].toUpperCase()
+          }
+        }
+      }
+      terminal.cursor.writeBlock(cols)
+    },
+    'run': (val, run) => { terminal.run() },
+    'stop': (val, run) => { terminal.clock.stop() },
+    'time': (val, run) => { terminal.clock.setFrame(parseInt(val)) },
+    'write': (val, run) => {
+      const g = val.substr(0, 1)
+      const pos = val.substr(1).split(';')
+      const x = pos[0] ? parseInt(pos[0]) : terminal.cursor.x
+      const y = pos[1] ? parseInt(pos[1]) : terminal.cursor.y
+      if (!isNaN(x) && !isNaN(y) && g) {
+        terminal.orca.write(x, y, g)
+      }
+    }
+  }
+
+  // Make shorthands
+  for (const id in this.operations) {
+    this.operations[id.substr(0, 1)] = this.operations[id]
+  }
+
+  // Begin
 
   this.start = function (q = '') {
     this.isActive = true
@@ -36,87 +91,22 @@ function Commander (terminal) {
     terminal.update()
   }
 
-  this.operations = {
-    'apm': (val) => { terminal.clock.set(null, parseInt(val)) },
-    'bpm': (val) => { terminal.clock.set(parseInt(val), parseInt(val), true) },
-    'color': (val) => {
-      const parts = val.split(';')
-      if (isColor(parts[0])) { terminal.theme.active.b_med = '#' + parts[0] }
-      if (isColor(parts[1])) { terminal.theme.active.b_inv = '#' + parts[1] }
-      if (isColor(parts[2])) { terminal.theme.active.b_high = '#' + parts[2] }
-    },
-    'find': (val) => { terminal.cursor.find(val) },
-    'move': (val) => {
-      const pos = val.split(';')
-      const x = parseInt(pos[0])
-      const y = parseInt(pos[1])
-      if (!isNaN(x) && !isNaN(y)) {
-        terminal.cursor.moveTo(x, y)
-      }
-    },
-    'play': (val) => { terminal.clock.play() },
-    'rot': (val) => {
-      const cols = terminal.cursor.getBlock()
-      for (const y in cols) {
-        for (const x in cols[y]) {
-          if (cols[y][x] === '.') { continue }
-          const isUC = cols[y][x] === cols[y][x].toUpperCase()
-          cols[y][x] = terminal.orca.keyOf(parseInt(val) + terminal.orca.valueOf(cols[y][x]))
-          if (isUC) {
-            cols[y][x] = cols[y][x].toUpperCase()
-          }
-        }
-      }
-      terminal.cursor.writeBlock(cols)
-    },
-    'run': (val) => { terminal.run() },
-    'stop': (val) => { terminal.clock.stop() },
-    'time': (val) => { terminal.clock.setFrame(parseInt(val)) },
-    'write': (val) => {
-      const g = val.substr(0, 1)
-      const pos = val.substr(1).split(';')
-      const x = pos[0] ? parseInt(pos[0]) : terminal.cursor.x
-      const y = pos[1] ? parseInt(pos[1]) : terminal.cursor.y
-      if (!isNaN(x) && !isNaN(y) && g) {
-        terminal.orca.write(x, y, g)
-      }
-    }
-  }
-
-  // Make shorthands
-  for (const id in this.operations) {
-    this.operations[id.substr(0, 1)] = this.operations[id]
-  }
-
   this.trigger = function (msg = this.query) {
     const cmd = `${msg}`.split(':')[0].toLowerCase()
     const val = `${msg}`.substr(cmd.length + 1)
-
-    if (this.operations[cmd]) {
-      this.operations[cmd](val)
-    } else if (this.patterns.find(msg)) {
-      this.inject(this.patterns.find(msg))
-    } else {
-      console.warn(`Unknown message: ${msg}`)
-    }
-
+    if (!this.operations[cmd]) { console.warn(`Unknown message: ${msg}`); return }
+    this.operations[cmd](val, true)
     this.stop()
   }
 
-  // Injections
-
-  this.inject = function (pattern) {
-    if (!pattern) { return }
-    terminal.cursor.writeBlock(pattern.trim().split('\n'))
-    terminal.cursor.reset()
+  this.preview = function (msg = this.query) {
+    const cmd = `${msg}`.split(':')[0].toLowerCase()
+    const val = `${msg}`.substr(cmd.length + 1)
+    if (!this.operations[cmd]) { console.warn(`Unknown message: ${msg}`); return }
+    this.operations[cmd](val, false)
   }
 
-  this.preview = function () {
-    const pattern = this.patterns.find(this.query)
-    if (!pattern) { return }
-    const result = pattern.trim().split('\n')
-    terminal.cursor.resize(result[0].length, result.length)
-  }
+  // Events
 
   this.onKeyDown = function (event) {
     // Reset
@@ -227,5 +217,3 @@ function Commander (terminal) {
     return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test('#' + str)
   }
 }
-
-module.exports = Commander

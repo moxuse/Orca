@@ -1,18 +1,20 @@
 'use strict'
 
-function Terminal () {
-  const Orca = require('../../core/orca')
-  const IO = require('../../core/io')
-  const Cursor = require('./cursor')
-  const Source = require('./source')
-  const History = require('./history')
-  const Commander = require('./commander')
-  const Clock = require('./clock')
-  const Theme = require('./lib/theme')
-  const Controller = require('./lib/controller')
+import Orca from '../../core/orca.js'
+import IO from '../../core/io.js'
+import Cursor from './cursor.js'
+import Source from './source.js'
+import History from './history.js'
+import Commander from './commander.js'
+import Clock from './clock.js'
+import Theme from './lib/theme.js'
+import Controller from './lib/controller.js'
 
-  this.version = 114
-  this.library = require('../../core/library')
+import library from '../../core/library.js'
+
+export default function Terminal () {
+  this.version = 120
+  this.library = library
 
   this.orca = new Orca(this)
   this.io = new IO(this)
@@ -207,10 +209,12 @@ function Terminal () {
     if (type === 4) { return { bg: this.theme.active.b_inv, fg: this.theme.active.f_inv } }
     // Locked
     if (type === 5) { return { fg: this.theme.active.f_med } }
-    // LikeCursor
+    // Reader
     if (type === 6) { return { fg: this.theme.active.b_inv } }
     // Invisible
     if (type === 7) { return {} }
+    // Reader
+    if (type === 8) { return { bg: this.theme.active.b_low, fg: this.theme.active.f_high } }
     // Default
     return { fg: this.theme.active.f_low }
   }
@@ -235,27 +239,27 @@ function Terminal () {
   this.drawInterface = function () {
     const col = this.grid.w
     const variables = Object.keys(this.orca.variables).join('')
-    // Cursor
-    this.write(`${this.cursor.x},${this.cursor.y}${this.cursor.mode === 1 ? '+' : ''}`, col * 0, 1, this.grid.w, this.cursor.mode === 1 ? 1 : 2)
-    this.write(`${this.cursor.w}:${this.cursor.h}`, col * 1, 1, this.grid.w)
-    this.write(`${this.cursor.inspect()}`, col * 2, 1, this.grid.w)
-    this.write(`${this.orca.f}f${this.isPaused ? '*' : ''}`, col * 3, 1, this.grid.w)
-    this.write(`${display(variables, this.orca.f, this.grid.w)}`, col * 4, 1, this.grid.w)
-    // Grid
+
+    if (this.commander.isActive === true) {
+      this.write(`${this.commander.query}${this.orca.f % 2 === 0 ? '_' : ''}`, col * 0, 1, this.grid.w * 2)
+    } else {
+      this.write(`${this.cursor.x},${this.cursor.y}${this.cursor.mode === 1 ? '+' : ''}`, col * 0, 1, this.grid.w, this.cursor.mode === 1 ? 1 : 2)
+      this.write(`${this.cursor.w}:${this.cursor.h}`, col * 1, 1, this.grid.w)
+      this.write(`${this.cursor.inspect()}`, col * 2, 1, this.grid.w)
+      this.write(`${this.orca.f}f${this.isPaused ? '*' : ''}`, col * 3, 1, this.grid.w)
+    }
+
     this.write(`${this.orca.w}x${this.orca.h}`, col * 0, 0, this.grid.w)
     this.write(`${this.grid.w}/${this.grid.h}`, col * 1, 0, this.grid.w)
     this.write(`${this.source}`, col * 2, 0, this.grid.w)
     this.write(`${this.clock}`, col * 3, 0, this.grid.w, this.io.midi.inputIndex > -1 ? 4 : 2)
-    this.write(`${this.io.inspect(this.grid.w)}`, col * 4, 0, this.grid.w)
 
-    if (this.orca.f < 20) {
-      this.write(`${this.io.midi}`, col * 5, 0, this.grid.w * 2)
-    }
-
-    if (this.commander.isActive === true) {
-      this.write(`${this.commander.query}${this.orca.f % 2 === 0 ? '_' : ''}`, col * 5, 1, this.grid.w * 2, 1)
-    } else if (this.orca.f < 8 && this.orca.f % 2 === 0) {
-      this.write(`v${this.version}`, col * 5, 1, this.grid.w * 2, 5)
+    if (this.orca.f < 15) {
+      this.write(`${this.io.midi}`, col * 4, 0, this.grid.w * 2)
+      this.write(`Version ${this.version}`, col * 4, 1, this.grid.w * 2)
+    } else {
+      this.write(`${this.io.inspect(this.grid.w)}`, col * 4, 0, this.grid.w)
+      this.write(`${display(variables, this.orca.f, this.grid.w)}`, col * 4, 1, this.grid.w)
     }
   }
 
@@ -365,5 +369,3 @@ function Terminal () {
   function display (str, f, max) { return str.length < max ? str : str.slice(f % str.length) + str.substr(0, f % str.length) }
   function clamp (v, min, max) { return v < min ? min : v > max ? max : v }
 }
-
-module.exports = Terminal

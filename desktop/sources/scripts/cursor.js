@@ -2,7 +2,7 @@
 
 const { clipboard } = require('electron')
 
-function Cursor (terminal) {
+export default function Cursor (terminal) {
   this.x = 0
   this.y = 0
   this.w = 1
@@ -11,30 +11,35 @@ function Cursor (terminal) {
   this.block = []
 
   this.move = function (x, y) {
+    if (isNaN(x) || isNaN(y)) { return }
     this.x = clamp(this.x + x, 0, terminal.orca.w - 1)
     this.y = clamp(this.y - y, 0, terminal.orca.h - 1)
     terminal.update()
   }
 
   this.moveTo = function (x, y) {
+    if (isNaN(x) || isNaN(y)) { return }
     this.x = clamp(x, 0, terminal.orca.w - 1)
     this.y = clamp(y, 0, terminal.orca.h - 1)
     terminal.update()
   }
 
   this.scale = function (x, y) {
+    if (isNaN(x) || isNaN(y)) { return }
     this.w = clamp(this.w + x, 1, terminal.orca.w - this.x)
     this.h = clamp(this.h - y, 1, terminal.orca.h - this.y)
     terminal.update()
   }
 
   this.resize = function (w, h) {
+    if (isNaN(w) || isNaN(h)) { return }
     this.w = clamp(w, 1, terminal.orca.w - this.x)
     this.h = clamp(h, 1, terminal.orca.h - this.y)
     terminal.update()
   }
 
   this.drag = function (x, y) {
+    if (isNaN(x) || isNaN(y)) { return }
     this.mode = 0
     this.cut()
     this.move(x, y)
@@ -169,6 +174,7 @@ function Cursor (terminal) {
   }
 
   this.eraseBlock = function (x, y, w, h) {
+    if (isNaN(x) || isNaN(y) || isNaN(w) || isNaN(h)) { return }
     for (let _y = y; _y < y + h; _y++) {
       for (let _x = x; _x < x + w; _x++) {
         terminal.orca.write(_x, _y, '.')
@@ -183,5 +189,3 @@ function Cursor (terminal) {
 
   function clamp (v, min, max) { return v < min ? min : v > max ? max : v }
 }
-
-module.exports = Cursor
