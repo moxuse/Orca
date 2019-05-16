@@ -3,10 +3,10 @@
 import Operator from '../operator.js'
 
 export default function OperatorMono (orca, x, y, passive) {
-  Operator.call(this, orca, x, y, ':', true)
+  Operator.call(this, orca, x, y, '%', true)
 
   this.name = 'mono'
-  this.info = 'Sends MIDI note to a monophonic instrument.'
+  this.info = 'Sends MIDI monophonic note'
 
   this.ports.input.channel = { x: 1, y: 0, clamp: { min: 0, max: 16 } }
   this.ports.input.octave = { x: 2, y: 0, clamp: { min: 0, max: 8 } }

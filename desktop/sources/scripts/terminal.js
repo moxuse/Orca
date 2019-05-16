@@ -9,11 +9,10 @@ import Commander from './commander.js'
 import Clock from './clock.js'
 import Theme from './lib/theme.js'
 import Controller from './lib/controller.js'
-
 import library from '../../core/library.js'
 
 export default function Terminal () {
-  this.version = 122
+  this.version = 125
   this.library = library
 
   this.orca = new Orca(this)
@@ -39,6 +38,7 @@ export default function Terminal () {
   }
   this.scale = window.devicePixelRatio
   this.hardmode = true
+  this.guide = false
 
   this.install = function (host) {
     host.appendChild(this.el)
@@ -54,6 +54,8 @@ export default function Terminal () {
     this.clock.start()
     this.update()
     this.el.className = 'ready'
+
+    this.toggleGuide(this.reqGuide() === true)
   }
 
   this.run = function () {
@@ -70,6 +72,7 @@ export default function Terminal () {
     this.ports = this.findPorts()
     this.drawProgram()
     this.drawInterface()
+    this.drawGuide()
   }
 
   this.reset = function () {
@@ -110,6 +113,21 @@ export default function Terminal () {
     this.hardmode = this.hardmode !== true
     console.log('Terminal', `Hardmode: ${this.hardmode}`)
     this.update()
+  }
+
+  this.toggleGuide = function (force = null) {
+    const display = force !== null ? force : this.guide !== true
+    if (display === this.guide) { return }
+    console.log('Terminal', `Toggle Guide: ${display}`)
+    this.guide = display
+    this.update()
+  }
+
+  this.reqGuide = function () {
+    const session = this.source.recall('session')
+    console.log('Terminal', 'Session #' + session)
+    if (!session || parseInt(session) < 20) { return true }
+    return false
   }
 
   this.modGrid = function (x = 0, y = 0) {
@@ -217,6 +235,8 @@ export default function Terminal () {
     if (type === 7) { return {} }
     // Reader
     if (type === 8) { return { bg: this.theme.active.b_low, fg: this.theme.active.f_high } }
+    // Reader+Background
+    if (type === 10) { return { bg: this.theme.active.background, fg: this.theme.active.f_high } }
     // Default
     return { fg: this.theme.active.f_low }
   }
@@ -241,27 +261,44 @@ export default function Terminal () {
   this.drawInterface = function () {
     const col = this.grid.w
     const variables = Object.keys(this.orca.variables).join('')
+    const col1 = this.orca.h
+    const col2 = this.orca.h + 1
 
     if (this.commander.isActive === true) {
-      this.write(`${this.commander.query}${this.orca.f % 2 === 0 ? '_' : ''}`, col * 0, 1, this.grid.w * 2)
+      this.write(`${this.commander.query}${this.orca.f % 2 === 0 ? '_' : ''}`, col * 0, this.orca.h + 1, this.grid.w * 2)
     } else {
-      this.write(`${this.cursor.x},${this.cursor.y}${this.cursor.mode === 1 ? '+' : ''}`, col * 0, 1, this.grid.w, this.cursor.mode === 1 ? 1 : 2)
-      this.write(`${this.cursor.w}:${this.cursor.h}`, col * 1, 1, this.grid.w)
-      this.write(`${this.cursor.inspect()}`, col * 2, 1, this.grid.w)
-      this.write(`${this.orca.f}f${this.isPaused ? '*' : ''}`, col * 3, 1, this.grid.w)
+      this.write(`${this.cursor.x},${this.cursor.y}${this.cursor.mode === 1 ? '+' : ''}`, col * 0, this.orca.h + 1, this.grid.w, this.cursor.mode === 1 ? 1 : 2)
+      this.write(`${this.cursor.w}:${this.cursor.h}`, col * 1, this.orca.h + 1, this.grid.w)
+      this.write(`${this.cursor.inspect()}`, col * 2, this.orca.h + 1, this.grid.w)
+      this.write(`${this.orca.f}f${this.isPaused ? '*' : ''}`, col * 3, this.orca.h + 1, this.grid.w)
     }
 
-    this.write(`${this.orca.w}x${this.orca.h}`, col * 0, 0, this.grid.w)
-    this.write(`${this.grid.w}/${this.grid.h}${this.tile.w !== 10 ? ' ' + (this.tile.w / 10).toFixed(1) : ''}`, col * 1, 0, this.grid.w)
-    this.write(`${this.source}`, col * 2, 0, this.grid.w)
-    this.write(`${this.clock}`, col * 3, 0, this.grid.w, this.io.midi.inputIndex > -1 ? 4 : 2)
+    this.write(`${this.orca.w}x${this.orca.h}`, col * 0, this.orca.h, this.grid.w)
+    this.write(`${this.grid.w}/${this.grid.h}${this.tile.w !== 10 ? ' ' + (this.tile.w / 10).toFixed(1) : ''}`, col * 1, this.orca.h, this.grid.w)
+    this.write(`${this.source}`, col * 2, this.orca.h, this.grid.w)
+    this.write(`${this.clock}`, col * 3, this.orca.h, this.grid.w, this.io.midi.inputIndex > -1 ? 4 : 2)
 
     if (this.orca.f < 15) {
-      this.write(`${this.io.midi}`, col * 4, 0, this.grid.w * 2)
-      this.write(`Version ${this.version}`, col * 4, 1, this.grid.w * 2)
+      this.write(`${this.io.midi}`, col * 4, this.orca.h, this.grid.w * 2)
+      this.write(`Version ${this.version}`, col * 4, this.orca.h + 1, this.grid.w * 2)
     } else {
-      this.write(`${this.io.inspect(this.grid.w)}`, col * 4, 0, this.grid.w)
-      this.write(`${display(variables, this.orca.f, this.grid.w)}`, col * 4, 1, this.grid.w)
+      this.write(`${this.io.inspect(this.grid.w)}`, col * 4, this.orca.h, this.grid.w)
+      this.write(`${display(variables, this.orca.f, this.grid.w)}`, col * 4, this.orca.h + 1, this.grid.w)
+    }
+  }
+
+  this.drawGuide = function () {
+    if (this.guide !== true) { return }
+    const operators = Object.keys(this.library).filter((val) => { return isNaN(val) })
+    for (const id in operators) {
+      const key = operators[id]
+      const oper = new this.library[key]()
+      const text = oper.info
+      const frame = this.orca.h - 4
+      const x = (Math.floor(parseInt(id) / frame) * 32) + 2
+      const y = (parseInt(id) % frame) + 2
+      this.write(text, x + 2, y, 99, 10)
+      this.write(key, x, y, 99, 3)
     }
   }
 
@@ -279,10 +316,10 @@ export default function Terminal () {
     }
   }
 
-  this.write = function (text, offsetX, offsetY, limit, type = 2) {
+  this.write = function (text, offsetX, offsetY, limit = 50, type = 2) {
     let x = 0
     while (x < text.length && x < limit - 1) {
-      this.drawSprite(offsetX + x, this.orca.h + offsetY, text.substr(x, 1), type)
+      this.drawSprite(offsetX + x, offsetY, text.substr(x, 1), type)
       x += 1
     }
   }
@@ -338,10 +375,18 @@ export default function Terminal () {
     this.orca.load(w, h, block, this.orca.f)
   }
 
-  this.docs = function () {
-    return Object.keys(this.library).reduce((acc, id) => { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].indexOf(id) < 0 ? `${acc}- ${new this.library[id]().docs()}\n` : acc }, '')
-  }
+  // Docs
 
+  this.docs = function () {
+    let html = ''
+    const operators = Object.keys(library).filter((val) => { return isNaN(val) })
+    for (const id in operators) {
+      const oper = new this.library[operators[id]]()
+      const ports = (oper.ports.haste ? Object.keys(oper.ports.haste).reduce((acc, key, val) => { return acc + ' *' + key + '*' }, '') : '') + (oper.ports.input ? Object.keys(oper.ports.input).reduce((acc, key, val) => { return acc + ' ' + key }, '') : '')
+      html += `- \`${oper.glyph.toUpperCase()}\` **${oper.name}**${ports !== '' ? '(' + ports.trim() + ')' : ''}: ${oper.info}.\n`
+    }
+    return html
+  }
   // Events
 
   window.addEventListener('dragover', (e) => {
