@@ -31,6 +31,13 @@ export default function Cursor (terminal) {
     terminal.update()
   }
 
+  this.scaleTo = function (w, h) {
+    if (isNaN(w) || isNaN(h)) { return }
+    this.w = clamp(w, 0, terminal.orca.w - 1)
+    this.h = clamp(h, 0, terminal.orca.h - 1)
+    terminal.update()
+  }
+
   this.resize = function (w, h) {
     if (isNaN(w) || isNaN(h)) { return }
     this.w = clamp(w, 1, terminal.orca.w - this.x)
@@ -66,6 +73,12 @@ export default function Cursor (terminal) {
     terminal.update()
   }
 
+  this.select = function (x, y, w = this.w, h = this.h) {
+    this.moveTo(x, y)
+    this.scaleTo(w, h)
+    terminal.update()
+  }
+
   this.copy = function () {
     const block = this.getBlock()
     var rows = []
@@ -96,7 +109,7 @@ export default function Cursor (terminal) {
     terminal.history.record(terminal.orca.s)
   }
 
-  this.erase = function (key) {
+  this.erase = function () {
     this.eraseBlock(this.x, this.y, this.w, this.h)
     if (this.mode === 1) { this.move(-1, 0) }
     terminal.history.record(terminal.orca.s)
@@ -161,10 +174,10 @@ export default function Cursor (terminal) {
     if (!block || block.length === 0) { return }
     const rect = this.toRect()
     let _y = rect.y
-    for (const lineId in block) {
+    for (const x in block) {
       let _x = rect.x
-      for (const glyphId in block[lineId]) {
-        const glyph = block[lineId][glyphId]
+      for (const y in block[x]) {
+        const glyph = block[x][y]
         terminal.orca.write(_x, _y, overlap === true && glyph === '.' ? terminal.orca.glyphAt(_x, _y) : glyph)
         _x++
       }
