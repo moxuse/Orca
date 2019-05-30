@@ -80,13 +80,53 @@ Here's a list of supported operations.
 
 Orca operates linearly from the top-left, to the bottom-right, operators are executed in that sequence, and so the variables stored at the top, can be overwritten by the variables declared at the bottom.
 
-## Patterns
+## Golf
 
 ### Modulo
+
+Will output the modulo of `6 % 4`.
 
 ```
 1X.
 6I4
+```
+
+### Uppercase
+
+Will output uppercase `C`.
+
+```
+cA1.
+.dAZ
+```
+
+### Lowercase
+
+Will output lowercase `C`.
+
+```
+H... 
+CA1.
+.dAz
+```
+
+### Not Null
+
+Will bang if not null.
+
+```
+cYc
+J.J
+cFc
+```
+
+### Substract
+
+Will substract `8 - 3`.
+
+```
+.3Mz
+8Ax.
 ```
 
 ### Hold Bang
@@ -96,16 +136,6 @@ Orca operates linearly from the top-left, to the bottom-right, operators are exe
 ...
 Hh.
 SF.
-```
-
-### Delay
-
-```
-3O..
-....
-.3O.
-....
-...D
 ```
 
 ### WN Corner
