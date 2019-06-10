@@ -31,10 +31,10 @@ import _bang from './library/_bang.js'
 import _comment from './library/_comment.js'
 import _midi from './library/_midi.js'
 import _mono from './library/_mono.js'
+import _keys from './library/_keys.js'
 import _cc from './library/_cc.js'
 import _udp from './library/_udp.js'
 import _osc from './library/_osc.js'
-import _keys from './library/_keys.js'
 
 export default {
   '0': _null,
@@ -77,8 +77,8 @@ export default {
   '#': _comment,
   ':': _midi,
   '%': _mono,
+  '&': _keys,
   '!': _cc,
   ';': _udp,
-  '=': _osc,
-  '&': _keys
+  '=': _osc
 }

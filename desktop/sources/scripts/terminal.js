@@ -12,7 +12,7 @@ import Controller from './lib/controller.js'
 import library from '../../core/library.js'
 
 export default function Terminal () {
-  this.version = 131
+  this.version = 138
   this.library = library
 
   this.orca = new Orca(this)
@@ -194,6 +194,7 @@ export default function Terminal () {
     if (this.isSelection(x, y)) { return 4 }
     if (!port && glyph === '.' && isLocked === false && this.hardmode === true) { return this.isLocals(x, y) === true ? 9 : 7 }
     if (selection === glyph && isLocked === false && selection !== '.') { return 6 }
+    if (glyph === '*' && isLocked === false) { return 6 }
     if (port) { return port[2] }
     if (isLocked === true) { return 5 }
     return 9
@@ -376,7 +377,7 @@ export default function Terminal () {
     const operators = Object.keys(library).filter((val) => { return isNaN(val) })
     for (const id in operators) {
       const oper = new this.library[operators[id]]()
-      const ports = (oper.ports.haste ? Object.keys(oper.ports.haste).reduce((acc, key, val) => { return acc + ' *' + key + '*' }, '') : '') + (oper.ports.input ? Object.keys(oper.ports.input).reduce((acc, key, val) => { return acc + ' ' + key }, '') : '')
+      const ports = oper.ports.input ? Object.keys(oper.ports.input).reduce((acc, key, val) => { return acc + ' ' + key }, '') : ''
       html += `- \`${oper.glyph.toUpperCase()}\` **${oper.name}**${ports !== '' ? '(' + ports.trim() + ')' : ''}: ${oper.info}.\n`
     }
     return html
