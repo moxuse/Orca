@@ -46,7 +46,7 @@ export default function Commander (terminal) {
     'write': (p) => { terminal.cursor.select(p.x, p.y, p.length.length); terminal.cursor.writeBlock([p.chars]) },
 
 
-    'anim': (p) => { console.log('anim!!!',p, terminal.zdog) }
+    'anim': (p) => { console.log('anim!!!',p, terminal.zdog); terminal.zdog.bang(p.str) }
   }
 
   // Make shorthands

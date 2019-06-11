@@ -361,11 +361,13 @@ export default function Terminal () {
     this.el.style.height = `${Math.ceil((this.tile.h + (this.tile.h / 5)) * this.orca.h)}px`
     this.el.style.position = `absolute`
 
-    this.elDog.width = this.tile.w * this.orca.w * this.scale
-    this.elDog.height = (this.tile.h + (this.tile.h / 5)) * this.orca.h * this.scale
-    this.elDog.style.width = `${Math.ceil(this.tile.w * this.orca.w)}px`
-    this.elDog.style.height = `${Math.ceil((this.tile.h + (this.tile.h / 5)) * this.orca.h)}px`
+    this.elDog.width = this.tile.w * this.orca.w * this.scale + 180;
+    this.elDog.height = (this.tile.h + (this.tile.h / 5)) * this.orca.h * this.scale + 80;
+    this.elDog.style.width = `${Math.ceil(this.tile.w * this.orca.w)}px` + 180
+    this.elDog.style.height = `${Math.ceil((this.tile.h + (this.tile.h / 5)) * this.orca.h)}px` + 80
     this.elDog.style.position = `absolute`
+    this.elDog.style.left = -40;
+    this.elDog.style.top = -40;
     // this.elDog.style.zIndex = `100`
 
     this.context.textBaseline = 'bottom'
