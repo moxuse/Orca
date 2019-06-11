@@ -136,7 +136,7 @@ export default class ZdogCanvas {
       translate: {  y: 1 },
       rotate: { y: 45 },
       stroke: 0.3,
-      color: this.palet.coral,
+      color: this.palet.orca,
     });
 
     new Zdog.Shape({
@@ -152,7 +152,7 @@ export default class ZdogCanvas {
       diameter: 0.8,
       length:  1,
       stroke: false,
-      color: this.palet.orca,
+      color: this.palet.coral,
       backface: this.palet.bgray,
     });
 
