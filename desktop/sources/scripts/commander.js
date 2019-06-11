@@ -43,7 +43,10 @@ export default function Commander (terminal) {
     'find': (p) => { terminal.cursor.find(p.str) },
     'select': (p) => { terminal.cursor.select(p.x, p.y, p.w, p.h) },
     'inject': (p) => { terminal.source.inject(p.str, true) },
-    'write': (p) => { terminal.cursor.select(p.x, p.y, p.length.length); terminal.cursor.writeBlock([p.chars]) }
+    'write': (p) => { terminal.cursor.select(p.x, p.y, p.length.length); terminal.cursor.writeBlock([p.chars]) },
+
+
+    'anim': (p) => { console.log('anim!!!',p, terminal.zdog) }
   }
 
   // Make shorthands

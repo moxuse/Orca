@@ -10,6 +10,7 @@ import Clock from './clock.js'
 import Theme from './lib/theme.js'
 import Controller from './lib/controller.js'
 import library from '../../core/library.js'
+import ZdogCanvas from './zdog.js';
 
 export default function Terminal () {
   this.version = 138
@@ -30,6 +31,9 @@ export default function Terminal () {
   this.el = document.createElement('canvas')
   this.context = this.el.getContext('2d')
 
+  this.elDog = document.createElement('canvas')
+  this.contextDog = this.el.getContext('2d')
+
   // Settings
   this.grid = { w: 8, h: 8 }
   this.tile = {
@@ -41,7 +45,8 @@ export default function Terminal () {
   this.guide = false
 
   this.install = function (host) {
-    host.appendChild(this.el)
+    host.appendChild(this.elDog)
+    host.appendChild(this.el)    
     this.theme.install(host)
   }
 
@@ -54,6 +59,10 @@ export default function Terminal () {
     this.clock.start()
     this.update()
     this.el.className = 'ready'
+    this.elDog.className = 'el-dog'
+
+    this.zdog = new ZdogCanvas(this.elDog)
+    this.animate()
 
     this.toggleGuide(this.reqGuide() === true)
   }
@@ -78,6 +87,13 @@ export default function Terminal () {
 
   this.reset = function () {
     this.theme.reset()
+  }
+
+  this.animate = () => {
+    if(this.zdog) {
+      this.zdog.update()
+    }
+    requestAnimationFrame(this.animate.bind(this))
   }
 
   this.setGrid = function (w, h) {
@@ -343,11 +359,19 @@ export default function Terminal () {
     this.el.height = (this.tile.h + (this.tile.h / 5)) * this.orca.h * this.scale
     this.el.style.width = `${Math.ceil(this.tile.w * this.orca.w)}px`
     this.el.style.height = `${Math.ceil((this.tile.h + (this.tile.h / 5)) * this.orca.h)}px`
+    this.el.style.position = `absolute`
+
+    this.elDog.width = this.tile.w * this.orca.w * this.scale
+    this.elDog.height = (this.tile.h + (this.tile.h / 5)) * this.orca.h * this.scale
+    this.elDog.style.width = `${Math.ceil(this.tile.w * this.orca.w)}px`
+    this.elDog.style.height = `${Math.ceil((this.tile.h + (this.tile.h / 5)) * this.orca.h)}px`
+    this.elDog.style.position = `absolute`
+    // this.elDog.style.zIndex = `100`
 
     this.context.textBaseline = 'bottom'
     this.context.textAlign = 'center'
     this.context.font = `${this.tile.h * 0.75 * this.scale}px input_mono_medium`
-
+    
     this.update()
   }
 
