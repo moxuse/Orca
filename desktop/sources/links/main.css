@@ -3,6 +3,6 @@ canvas { display: block;white-space: pre;font-size: 11px;line-height: 10px; text
 canvas.ready { opacity: 1 }
 
 canvas.el-dog {
-  opacity: 0.4;
+  opacity: 0.9;
   background: #2c3235;
 }

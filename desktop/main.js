@@ -15,6 +15,7 @@ function protocolHandler (request, respond) {
   }
 }
 
+
 let isShown = true
 
 app.win = null

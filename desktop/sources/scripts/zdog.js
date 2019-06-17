@@ -46,20 +46,20 @@ export default class ZdogCanvas {
       return;
     }
     if (pat === '1') {
-      this.anchors.forEach((p, i) => {
-      TweenLite.set(p.children[0].scale, { x:0, y:0 });
-      TweenLite.to(p.children[0].scale, 0.125, {
-        x : 1,
-        y : 1,
-        ease: Power3.easeInOut,
-        delay: (revI - i)  * 0.015
-      })
-      })
+      // this.anchors.forEach((p, i) => {
+      // TweenLite.set(p.children[0].scale, { x:0, y:0 });
+      // TweenLite.to(p.children[0].scale, 0.125, {
+      //   x : 1,
+      //   y : 1,
+      //   ease: Power3.easeInOut,
+      //   delay: (revI - i)  * 0.015
+      // })
+      //})
       return;
     }
 
     this.anchors.forEach((p, i) => {
-      TweenLite.to(p.rotate, 0.75, {
+      TweenLite.to(p.rotate, 1.25, {
         y : cur - 2.35,
         ease: Power4.easeInOut
       });
@@ -68,35 +68,41 @@ export default class ZdogCanvas {
       if (this.toggle) {
         mdist = mdist * -1;
       }
-      const curt = p.children[0].translate.y
-      TweenLite.to(p.children[0].translate, 0.5, {
-        y : curt - mdist,
-        ease: Power4.easeInOut,
-        delay: i  * 0.015
-      })
+
+      let diff = 1.0;
+      if (6 > ((i - 1)%10)) {
+        diff = -1.0
+      }
+        const curt = p.children[0].translate.z
+        TweenLite.to(p.children[0].translate, 0.75, {
+          z : curt - mdist * diff,
+          ease: Power4.easeInOut,
+          // delay: i  * 0.015
+        })
+      
 
       const curt5 = p.children[0].rotate.z
-      TweenLite.to(p.children[0].rotate, 0.5, {
-        z : curt5 - (mdist * 0.75),
+      TweenLite.to(p.children[0].rotate, 0.75, {
+        z : curt5 - mdist * 2.15,
         ease: Power4.easeInOut
       })
 
       const curt2 = p.children[1].translate.z
-      TweenLite.to(p.children[1].translate, 0.5, {
-        z : curt2 + mdist,
+      TweenLite.to(p.children[1].translate, 0.75, {
+        z : curt2 + mdist * (-diff),
         ease: Power4.easeInOut,
         delay: (revI - i) * 0.015
       })
 
       const curt4 = p.children[1].rotate.z
-      TweenLite.to(p.children[1].rotate, 0.5, {
+      TweenLite.to(p.children[1].rotate, 0.75, {
         x : curt4 + (mdist * 3),
         z : curt4 + (mdist * 3),
         ease: Power4.easeInOut
       })
 
       const curt3 = p.children[3].translate.x
-      TweenLite.to(p.children[3].translate, 0.5, {
+      TweenLite.to(p.children[3].translate, 0.75, {
         x : curt3 + mdist,
         ease: Power4.easeInOut,
         delay: (revI - i)  * 0.015
@@ -168,15 +174,12 @@ export default class ZdogCanvas {
         )
       }
     }
-
-    
-
   }
 
   update() {
     this.anchors.forEach((a, i) => {
-      a.rotate.x += 0.005;
-      a.rotate.y -= 0.008;
+      a.rotate.x += 0.0015;
+      a.rotate.y -= 0.004;
     })
     
     // TweenLite.update();
