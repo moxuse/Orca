@@ -1,7 +1,5 @@
 'use strict'
 
-import transpose from './transpose.js'
-
 export default function Operator (orca, x, y, glyph = '.', passive = false) {
   this.name = 'unknown'
   this.x = x
@@ -10,7 +8,7 @@ export default function Operator (orca, x, y, glyph = '.', passive = false) {
   this.draw = passive
   this.glyph = passive ? glyph.toUpperCase() : glyph
   this.info = '--'
-  this.ports = { input: {}, haste: {}, bang: !passive }
+  this.ports = { bang: !passive }
 
   // Actions
 
@@ -26,10 +24,10 @@ export default function Operator (orca, x, y, glyph = '.', passive = false) {
     return glyph
   }
 
-  this.output = function (g) {
-    if (!this.ports.output) { console.warn(this.name, 'Trying to output, but no port'); return }
+  this.output = function (g, port = this.ports.output) {
+    if (!port) { console.warn(this.name, 'Trying to output, but no port'); return }
     if (!g) { return }
-    orca.write(this.x + this.ports.output.x, this.y + this.ports.output.y, this.requireUC() === true ? `${g}`.toUpperCase() : g)
+    orca.write(this.x + port.x, this.y + port.y, this.shouldUpperCase() === true ? `${g}`.toUpperCase() : g)
   }
 
   this.bang = function (b) {
@@ -39,26 +37,15 @@ export default function Operator (orca, x, y, glyph = '.', passive = false) {
 
   // Phases
 
-  this.permissions = function () {
-    for (const id in this.ports.input) {
-      const port = this.ports.input[id]
-      orca.lock(this.x + port.x, this.y + port.y)
-    }
-    if (this.ports.output) {
-      orca.lock(this.x + this.ports.output.x, this.y + this.ports.output.y)
-    }
-  }
-
-  this.haste = function () {
-  }
-
-  this.operation = function () {
-
-  }
-
   this.run = function (force = false) {
-    this.draw = true
+    // Operate
     const payload = this.operation(force)
+    // Permissions
+    for (const id in this.ports) {
+      orca.lock(this.x + this.ports[id].x, this.y + this.ports[id].y)
+    }
+    this.draw = true
+
     if (this.ports.output) {
       if (this.ports.output.bang === true) {
         this.bang(payload)
@@ -66,6 +53,10 @@ export default function Operator (orca, x, y, glyph = '.', passive = false) {
         this.output(payload)
       }
     }
+  }
+
+  this.operation = function () {
+
   }
 
   // Helpers
@@ -84,7 +75,7 @@ export default function Operator (orca, x, y, glyph = '.', passive = false) {
 
   this.explode = function () {
     this.replace('*')
-    this.lock()
+    // this.lock()
   }
 
   this.move = function (x, y) {
@@ -109,48 +100,41 @@ export default function Operator (orca, x, y, glyph = '.', passive = false) {
 
   // Docs
 
+  this.addPort = function (name, pos) {
+    this.ports[name] = pos
+  }
+
   this.getPorts = function () {
     const a = []
     if (this.draw === true) {
       a.push([this.x, this.y, 0, `${this.name.charAt(0).toUpperCase() + this.name.substring(1).toLowerCase()}`])
     }
     if (!this.passive) { return a }
-    for (const id in this.ports.haste) {
-      const port = this.ports.haste[id]
-      a.push([this.x + port.x, this.y + port.y, 1, `${this.glyph}-${id}`])
-    }
-    for (const id in this.ports.input) {
-      const port = this.ports.input[id]
-      a.push([this.x + port.x, this.y + port.y, 2, `${this.glyph}-${id}`])
-    }
-    if (this.ports.output) {
-      const port = this.ports.output
-      a.push([this.x + port.x, this.y + port.y, port.reader || port.bang ? 8 : 3, `${this.glyph}-output`])
+    for (const id in this.ports) {
+      const port = this.ports[id]
+      const type = this.getPortType(id)
+      a.push([this.x + port.x, this.y + port.y, type, `${this.glyph}-${id}`])
     }
     return a
   }
 
-  this.requireUC = function (ports = this.ports.input) {
-    if (this.ports.output.sensitive !== true) { return false }
-    for (const id in ports) {
-      const value = this.listen(ports[id])
-      if (value.length !== 1) { continue }
-      if (value.toLowerCase() === value.toUpperCase()) { continue }
-      if (`${value}`.toUpperCase() === `${value}`) { return true }
+  this.getPortType = function (id) {
+    const port = this.ports[id]
+    if (port.output || id === 'output') {
+      return port.reader || port.bang ? 8 : 3
     }
-    return false
+    if (port.x < 0 || port.y < 0) {
+      return 1
+    }
+    return 2
   }
 
-  // Notes tools
-
-  this.transpose = function (n, o = 3) {
-    if (!transpose[n]) { return { note: n, octave: o } }
-    const note = transpose[n].charAt(0)
-    const octave = clamp(parseInt(transpose[n].charAt(1)) + o, 0, 8)
-    const value = ['C', 'c', 'D', 'd', 'E', 'F', 'f', 'G', 'g', 'A', 'a', 'B'].indexOf(note)
-    const id = clamp((octave * 12) + value, 0, 127)
-    const real = id < 89 ? Object.keys(transpose)[id - 45] : null
-    return { id, value, note, octave, real }
+  this.shouldUpperCase = function (ports = this.ports) {
+    if (!this.ports.output || !this.ports.output.sensitive) { return false }
+    const value = this.listen({ x: 1, y: 0 })
+    if (value.toLowerCase() === value.toUpperCase()) { return false }
+    if (value.toUpperCase() !== value) { return false }
+    return true
   }
 
   // Docs

@@ -3,61 +3,69 @@
 export default function Commander (terminal) {
   this.isActive = false
   this.query = ''
+  this.history = []
+  this.historyIndex = 0
 
   // Library
 
-  this.operations = {
-    'apm': (val, run) => { if (run) { terminal.clock.set(null, parseInt(val)) } },
-    'bpm': (val, run) => { if (run) { terminal.clock.set(parseInt(val), parseInt(val), true) } },
-    'color': (val, run) => {
-      const parts = val.split(';')
-      if (isColor(parts[0])) { terminal.theme.active.b_med = '#' + parts[0] }
-      if (isColor(parts[1])) { terminal.theme.active.b_inv = '#' + parts[1] }
-      if (isColor(parts[2])) { terminal.theme.active.b_high = '#' + parts[2] }
-    },
-    'find': (val, run) => { terminal.cursor.find(val) },
-    'move': (val, run) => {
-      const pos = val.split(';')
-      terminal.cursor.moveTo(parseInt(pos[0]), parseInt(pos[1]))
-    },
-    'graphic': (val, run) => {
-      terminal.theme.setImage(terminal.source.locate(val + '.jpg'))
-    },
-    'inject': (val, run) => {
-      terminal.source.inject(val, run)
-    },
-    'play': (val, run) => { terminal.clock.play() },
-    'rot': (val, run) => {
-      const cols = terminal.cursor.getBlock()
-      for (const y in cols) {
-        for (const x in cols[y]) {
-          if (!cols[y][x] || cols[y][x] === '.') { continue }
-          const isUC = cols[y][x] === cols[y][x].toUpperCase()
-          cols[y][x] = terminal.orca.keyOf(parseInt(val) + terminal.orca.valueOf(cols[y][x]))
-          if (isUC) {
-            cols[y][x] = `${cols[y][x]}`.toUpperCase()
-          }
-        }
-      }
-      terminal.cursor.writeBlock(cols)
-    },
-    'run': (val, run) => { if (run) { terminal.run() } },
-    'stop': (val, run) => { if (run) { terminal.clock.stop() } },
-    'time': (val, run) => { terminal.clock.setFrame(parseInt(val)) },
-    'write': (val, run) => {
-      const g = val.substr(0, 1)
-      const pos = val.substr(1).split(';')
-      const x = pos[0] ? parseInt(pos[0]) : terminal.cursor.x
-      const y = pos[1] ? parseInt(pos[1]) : terminal.cursor.y
-      if (!isNaN(x) && !isNaN(y) && g) {
-        terminal.orca.write(x, y, g)
-      }
-    }
+  this.passives = {
+    'find': (p) => { terminal.cursor.find(p.str) },
+    'select': (p) => { terminal.cursor.select(p.x, p.y, p.w, p.h) },
+    'inject': (p) => { terminal.cursor.select(p._x, p._y); terminal.source.inject(p._str, false) },
+    'write': (p) => { terminal.cursor.select(p._x, p._y, p._str.length) }
+  }
+
+  this.actives = {
+    // Ports
+    'osc': (p) => { terminal.io.osc.select(p.int) },
+    'udp': (p) => { terminal.io.udp.select(p.int) },
+    'ip': (p) => { terminal.io.setIp(p.str) },
+    'cc': (p) => { terminal.io.cc.setOffset(p.int) },
+    // Cursor
+    'copy': (p) => { terminal.cursor.copy() },
+    'paste': (p) => { terminal.cursor.paste(true) },
+    'erase': (p) => { terminal.cursor.erase() },
+    // Controls
+    'play': (p) => { terminal.clock.play() },
+    'stop': (p) => { terminal.clock.stop() },
+    'run': (p) => { terminal.run() },
+    // Speed
+    'apm': (p) => { terminal.clock.set(null, p.int) },
+    'bpm': (p) => { terminal.clock.set(p.int, p.int, true) },
+    'time': (p) => { terminal.clock.setFrame(p.int) },
+    'rewind': (p) => { terminal.clock.setFrame(terminal.orca.f - p.int) },
+    'skip': (p) => { terminal.clock.setFrame(terminal.orca.f + p.int) },
+    // Effects
+    'rot': (p) => { terminal.cursor.rotate(p.int) },
+    // Themeing
+    'color': (p) => { terminal.theme.set('b_med', p.parts[0]); terminal.theme.set('b_inv', p.parts[1]); terminal.theme.set('b_high', p.parts[2]) },
+    'graphic': (p) => { terminal.theme.setImage(terminal.source.locate(p.str + '.jpg')) },
+    // Edit
+    'find': (p) => { terminal.cursor.find(p.str) },
+    'select': (p) => { terminal.cursor.select(p.x, p.y, p.w, p.h) },
+    'inject': (p) => { terminal.cursor.select(p._x, p._y); terminal.source.inject(p._str, true) },
+    'write': (p) => { terminal.cursor.select(p._x, p._y, p._str.length); terminal.cursor.writeBlock([p._str.split('')]) }
   }
 
   // Make shorthands
-  for (const id in this.operations) {
-    this.operations[id.substr(0, 1)] = this.operations[id]
+  for (const id in this.actives) {
+    this.actives[id.substr(0, 2)] = this.actives[id]
+  }
+
+  function Param (val) {
+    this.str = `${val}`
+    this.length = this.str.length
+    this.chars = this.str.split('')
+    this.int = !isNaN(val) ? parseInt(val) : null
+    this.parts = val.split(';')
+    this.x = parseInt(this.parts[0])
+    this.y = parseInt(this.parts[1])
+    this.w = parseInt(this.parts[2])
+    this.h = parseInt(this.parts[3])
+    // Optionals Position Style
+    this._str = this.parts[0]
+    this._x = parseInt(this.parts[1])
+    this._y = parseInt(this.parts[2])
   }
 
   // Begin
@@ -71,6 +79,7 @@ export default function Commander (terminal) {
   this.stop = function () {
     this.isActive = false
     this.query = ''
+    this.historyIndex = this.history.length
     terminal.update()
   }
 
@@ -91,19 +100,24 @@ export default function Commander (terminal) {
     terminal.update()
   }
 
-  this.trigger = function (msg = this.query) {
+  this.trigger = function (msg = this.query, touch = true) {
     const cmd = `${msg}`.split(':')[0].toLowerCase()
     const val = `${msg}`.substr(cmd.length + 1)
-    if (!this.operations[cmd]) { console.warn(`Unknown message: ${msg}`); return }
-    this.operations[cmd](val, true)
-    this.stop()
+    if (!this.actives[cmd]) { console.warn('Commander', `Unknown message: ${msg}`); this.stop(); return }
+    console.info('Commander', msg)
+    this.actives[cmd](new Param(val), true)
+    if (touch === true) {
+      this.history.push(msg)
+      this.historyIndex = this.history.length
+      this.stop()
+    }
   }
 
   this.preview = function (msg = this.query) {
     const cmd = `${msg}`.split(':')[0].toLowerCase()
     const val = `${msg}`.substr(cmd.length + 1)
-    if (!this.operations[cmd]) { console.warn(`Unknown message: ${msg}`); return }
-    this.operations[cmd](val, false)
+    if (!this.passives[cmd]) { return }
+    this.passives[cmd](new Param(val), false)
   }
 
   // Events
@@ -140,6 +154,8 @@ export default function Commander (terminal) {
     if (event.ctrlKey) { return }
 
     if (event.key === ' ' && terminal.cursor.mode === 0) { terminal.clock.togglePlay(); event.preventDefault(); return }
+    if (event.key === ' ' && terminal.cursor.mode === 1) { terminal.cursor.move(1, 0); event.preventDefault(); return }
+
     if (event.key === 'Escape') { terminal.toggleGuide(false); terminal.commander.stop(); terminal.clear(); terminal.isPaused = false; terminal.cursor.reset(); return }
     if (event.key === 'Backspace') { terminal[this.isActive === true ? 'commander' : 'cursor'].erase(); event.preventDefault(); return }
 
@@ -159,6 +175,12 @@ export default function Commander (terminal) {
   }
 
   this.onArrowUp = function (mod = false, skip = false, drag = false) {
+    // Navigate History
+    if (this.isActive === true) {
+      this.historyIndex -= this.historyIndex > 0 ? 1 : 0
+      this.start(this.history[this.historyIndex])
+      return
+    }
     const leap = skip ? terminal.grid.h : 1
     terminal.toggleGuide(false)
     if (drag) {
@@ -171,6 +193,12 @@ export default function Commander (terminal) {
   }
 
   this.onArrowDown = function (mod = false, skip = false, drag = false) {
+    // Navigate History
+    if (this.isActive === true) {
+      this.historyIndex += this.historyIndex < this.history.length ? 1 : 0
+      this.start(this.history[this.historyIndex])
+      return
+    }
     const leap = skip ? terminal.grid.h : 1
     terminal.toggleGuide(false)
     if (drag) {
@@ -215,9 +243,5 @@ export default function Commander (terminal) {
 
   this.toString = function () {
     return `${this.query}`
-  }
-
-  function isColor (str) {
-    return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test('#' + str)
   }
 }

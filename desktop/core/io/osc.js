@@ -5,10 +5,10 @@ const osc = require('node-osc')
 export default function Osc (terminal) {
   this.stack = []
   this.port = null
-  this.options = { default: 49162, tidalCycles: 6010, sonicPi: 4559 }
+  this.options = { default: 49162, tidalCycles: 6010, sonicPi: 4559, superCollider: 57120, norns: 10111 }
 
   this.start = function () {
-    console.info('OSC Starting..')
+    console.info('OSC', 'Starting..')
     this.setup()
     this.select()
   }
@@ -28,7 +28,8 @@ export default function Osc (terminal) {
   }
 
   this.play = function ({ path, msg }) {
-    if (!this.client) { return }
+    if (!this.client) { console.warn('OSC', 'Unavailable client'); return }
+    if (!msg) { console.warn('OSC', 'Empty message'); return }
     const oscMsg = new osc.Message(path)
     for (var i = 0; i < msg.length; i++) {
       oscMsg.append(terminal.orca.valueOf(msg.charAt(i)))
@@ -39,14 +40,15 @@ export default function Osc (terminal) {
   }
 
   this.select = function (port = this.options.default) {
-    if (port < 1000) { console.warn('Unavailable port'); return }
-    this.port = port
+    if (parseInt(port) === this.port) { console.warn('OSC', 'Already selected'); return }
+    if (isNaN(port) || port < 1000) { console.warn('OSC', 'Unavailable port'); return }
+    console.info('OSC', `Selected port: ${port}`)
+    this.port = parseInt(port)
     this.setup()
     this.update()
   }
 
   this.update = function () {
-    console.log(`OSC Port: ${this.port}`)
     terminal.controller.clearCat('default', 'OSC')
     for (const id in this.options) {
       terminal.controller.add('default', 'OSC', `${id.charAt(0).toUpperCase() + id.substr(1)}(${this.options[id]}) ${this.port === this.options[id] ? ' — Active' : ''}`, () => { terminal.io.osc.select(this.options[id]) }, '')
@@ -54,8 +56,10 @@ export default function Osc (terminal) {
     terminal.controller.commit()
   }
 
-  this.setup = function (ip = '127.0.0.1') {
+  this.setup = function () {
+    if (!this.port) { return }
     if (this.client) { this.client.close() }
-    this.client = new osc.Client(ip, this.port)
+    this.client = new osc.Client(terminal.io.ip, this.port)
+    console.info('OSC', 'Started client at ' + terminal.io.ip + ':' + this.port)
   }
 }

@@ -85,8 +85,6 @@ export default function Orca (terminal) {
       const operator = operators[id]
       if (this.lockAt(operator.x, operator.y)) { continue }
       if (operator.passive || operator.hasNeighbor('*')) {
-        operator.haste()
-        operator.permissions()
         operator.run()
       }
     }
@@ -133,12 +131,16 @@ export default function Orca (terminal) {
     return g === '.' || !!library[`${g}`.toLowerCase()]
   }
 
-  this.keyOf = function (val) {
-    return this.keys[val % 36]
+  this.isSpecial = function (g) {
+    return g.toLowerCase() === g.toUpperCase() && isNaN(g)
+  }
+
+  this.keyOf = function (val, uc = false) {
+    return uc === true ? this.keys[val % 36].toUpperCase() : this.keys[val % 36]
   }
 
   this.valueOf = function (g) {
-    return g === '.' ? 0 : this.keys.indexOf(`${g}`.toLowerCase())
+    return !g || g === '.' ? 0 : this.keys.indexOf(`${g}`.toLowerCase())
   }
 
   this.indexAt = function (x, y) {

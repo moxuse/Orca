@@ -27,19 +27,20 @@ export default function Udp (terminal) {
   }
 
   this.play = function (data) {
-    this.server.send(Buffer.from(`${data}`), this.port, '127.0.0.1', (err) => {
+    this.server.send(Buffer.from(`${data}`), this.port, terminal.io.ip, (err) => {
       if (err) { console.warn(err) }
     })
   }
 
   this.select = function (port = this.options.default) {
-    if (port < 1000) { console.warn('Unavailable port'); return }
-    this.port = port
+    if (parseInt(port) === this.port) { console.warn('UDP', 'Already selected'); return }
+    if (isNaN(port) || port < 1000) { console.warn('UDP', 'Unavailable port'); return }
+    console.info('UDP', `Selected port: ${port}`)
+    this.port = parseInt(port)
     this.update()
   }
 
   this.update = function () {
-    console.log(`UDP Port: ${this.port}`)
     terminal.controller.clearCat('default', 'UDP')
     for (const id in this.options) {
       terminal.controller.add('default', 'UDP', `${id.charAt(0).toUpperCase() + id.substr(1)}(${this.options[id]}) ${this.port === this.options[id] ? ' — Active' : ''}`, () => { terminal.io.udp.select(this.options[id]) }, '')
@@ -53,10 +54,7 @@ export default function Udp (terminal) {
   // Input
 
   this.listener.on('message', (msg, rinfo) => {
-    const cmd = `${msg}`.split(':')[0].toLowerCase()
-    const val = `${msg}`.substr(cmd.length + 1)
-    if (!terminal.commander.operations[cmd]) { console.warn(`Unknown message: ${msg}`); return }
-    terminal.commander.operations[cmd](val, true)
+    terminal.commander.trigger(`${msg}`, false)
   })
 
   this.listener.on('listening', () => {
