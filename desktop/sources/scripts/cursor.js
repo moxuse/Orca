@@ -1,56 +1,81 @@
 'use strict'
 
-const { clipboard } = require('electron')
-
-export default function Cursor (terminal) {
+function Cursor (terminal) {
   this.x = 0
   this.y = 0
-  this.w = 1
-  this.h = 1
+  this.w = 0
+  this.h = 0
+
+  this.minX = 0
+  this.maxX = 0
+  this.minY = 0
+  this.maxY = 0
+
   this.mode = 0
-  this.block = []
+
+  this.start = () => {
+    document.onmousedown = (e) => { this.onMouseDown(e) }
+    document.onmouseup = (e) => { this.onMouseUp(e) }
+    document.onmousemove = (e) => { this.onMouseMove(e) }
+    document.oncopy = (e) => { this.onCopy(e) }
+    document.oncut = (e) => { this.onCut(e) }
+    document.onpaste = (e) => { this.onPaste(e) }
+  }
 
   this.move = function (x, y) {
     if (isNaN(x) || isNaN(y)) { return }
     this.x = clamp(this.x + parseInt(x), 0, terminal.orca.w - 1)
     this.y = clamp(this.y - parseInt(y), 0, terminal.orca.h - 1)
+
+    this.calculateBounds()
+    terminal.toggleGuide(false)
     terminal.update()
   }
 
   this.moveTo = function (x, y) {
-    if (!x || !y || isNaN(x) || isNaN(y)) { return }
+    if (isNaN(x) || isNaN(y)) { return }
     this.x = clamp(parseInt(x), 0, terminal.orca.w - 1)
     this.y = clamp(parseInt(y), 0, terminal.orca.h - 1)
+
+    this.calculateBounds()
+    terminal.toggleGuide(false)
     terminal.update()
   }
 
   this.scale = function (x, y) {
     if (isNaN(x) || isNaN(y)) { return }
-    this.w = clamp(this.w + parseInt(x), 1, terminal.orca.w - this.x)
-    this.h = clamp(this.h - parseInt(y), 1, terminal.orca.h - this.y)
+    this.w = clamp(this.w + parseInt(x), -this.x, terminal.orca.w - this.x)
+    this.h = clamp(this.h - parseInt(y), -this.y, terminal.orca.h - this.y)
+
+    this.calculateBounds()
     terminal.update()
   }
 
   this.scaleTo = function (w, h) {
     if (isNaN(w) || isNaN(h)) { return }
-    this.w = clamp(parseInt(w), 0, terminal.orca.w - 1)
-    this.h = clamp(parseInt(h), 0, terminal.orca.h - 1)
+    this.w = clamp(parseInt(w), -this.x, terminal.orca.w - 1)
+    this.h = clamp(parseInt(h), -this.y, terminal.orca.h - 1)
+
+    this.calculateBounds()
     terminal.update()
   }
 
   this.resize = function (w, h) {
     if (isNaN(w) || isNaN(h)) { return }
-    this.w = clamp(parseInt(w), 1, terminal.orca.w - this.x)
-    this.h = clamp(parseInt(h), 1, terminal.orca.h - this.y)
+    this.w = clamp(parseInt(w), -this.x, terminal.orca.w - this.x)
+    this.h = clamp(parseInt(h), -this.y, terminal.orca.h - this.y)
+
+    this.calculateBounds()
     terminal.update()
   }
 
   this.drag = function (x, y) {
     if (isNaN(x) || isNaN(y)) { return }
     this.mode = 0
-    this.cut()
+    const block = this.getBlock()
+    this.erase()
     this.move(x, y)
-    this.paste()
+    this.writeBlock(block)
   }
 
   this.selectAll = function () {
@@ -59,12 +84,16 @@ export default function Cursor (terminal) {
     this.w = terminal.orca.w
     this.h = terminal.orca.h
     this.mode = 0
+
+    this.calculateBounds()
     terminal.update()
   }
 
   this.select = function (x = this.x, y = this.y, w = this.w, h = this.h) {
     this.moveTo(x, y)
     this.scaleTo(w, h)
+
+    this.calculateBounds()
     terminal.update()
   }
 
@@ -74,27 +103,22 @@ export default function Cursor (terminal) {
       this.y = 0
     }
     this.move(0, 0)
-    this.w = 1
-    this.h = 1
+    this.w = 0
+    this.h = 0
+    this.calculateBounds()
     this.mode = 0
   }
 
   this.copy = function () {
-    const block = this.getBlock()
-    var rows = []
-    for (var i = 0; i < block.length; i++) {
-      rows.push(block[i].join(''))
-    }
-    clipboard.writeText(rows.join('\n'))
+    document.execCommand('copy')
   }
 
   this.cut = function () {
-    this.copy()
-    this.erase()
+    document.execCommand('cut')
   }
 
   this.paste = function (overlap = false) {
-    this.writeBlock(clipboard.readText().split(/\r?\n/), overlap)
+    document.execCommand('paste')
   }
 
   this.read = function () {
@@ -102,6 +126,7 @@ export default function Cursor (terminal) {
   }
 
   this.write = function (g) {
+    if (!terminal.orca.isAllowed(g)) { return }
     if (terminal.orca.write(this.x, this.y, g) && this.mode === 1) {
       this.move(1, 0)
     }
@@ -109,8 +134,12 @@ export default function Cursor (terminal) {
   }
 
   this.erase = function () {
-    this.eraseBlock(this.x, this.y, this.w, this.h)
-    if (this.mode === 1) { this.move(-1, 0) }
+    for (let y = this.minY; y <= this.maxY; y++) {
+      for (let x = this.minX; x <= this.maxX; x++) {
+        terminal.orca.write(x, y, '.')
+      }
+    }
+
     terminal.history.record(terminal.orca.s)
   }
 
@@ -128,14 +157,12 @@ export default function Cursor (terminal) {
     terminal.cursor.writeBlock(cols)
   }
 
-  this.find = function (str) {
+  this.find = (str) => {
     const i = terminal.orca.s.indexOf(str)
     if (i < 0) { return }
     const pos = terminal.orca.posAt(i)
-    this.w = str.length
-    this.h = 1
-    this.x = pos.x
-    this.y = pos.y
+    this.select(pos.x, pos.y, str.length - 1, 0)
+    terminal.update()
   }
 
   this.trigger = function () {
@@ -146,8 +173,8 @@ export default function Cursor (terminal) {
   }
 
   this.toggleMode = function (val) {
-    this.w = 1
-    this.h = 1
+    this.w = 0
+    this.h = 0
     this.mode = this.mode === 0 ? val : 0
   }
 
@@ -199,18 +226,80 @@ export default function Cursor (terminal) {
     terminal.history.record(terminal.orca.s)
   }
 
-  this.eraseBlock = function (x, y, w, h) {
-    if (isNaN(x) || isNaN(y) || isNaN(w) || isNaN(h)) { return }
-    for (let _y = y; _y < y + h; _y++) {
-      for (let _x = x; _x < x + w; _x++) {
-        terminal.orca.write(_x, _y, '.')
-      }
+  this.toRect = function () {
+    return {
+      x: this.minX,
+      y: this.minY,
+      w: this.maxX - this.minX + 1,
+      h: this.maxY - this.minY + 1
     }
-    terminal.history.record(terminal.orca.s)
   }
 
-  this.toRect = function () {
-    return { x: this.x, y: this.y, w: this.w, h: this.h }
+  this.calculateBounds = function () {
+    this.minX = this.x < this.x + this.w ? this.x : this.x + this.w
+    this.minY = this.y < this.y + this.h ? this.y : this.y + this.h
+    this.maxX = this.x > this.x + this.w ? this.x : this.x + this.w
+    this.maxY = this.y > this.y + this.h ? this.y : this.y + this.h
+  }
+
+  this.selected = function (x, y) {
+    return (
+      x >= this.minX &&
+      x <= this.maxX &&
+      y >= this.minY &&
+      y <= this.maxY
+    )
+  }
+
+  this.mouseFrom = null
+
+  this.onMouseDown = (e) => {
+    const pos = this.tilePos(e.clientX, e.clientY)
+    this.select(pos.x, pos.y, 0, 0)
+    this.mouseFrom = pos
+  }
+
+  this.onMouseUp = (e) => {
+    if (this.mouseFrom) {
+      const pos = this.tilePos(e.clientX, e.clientY)
+      this.select(this.mouseFrom.x, this.mouseFrom.y, pos.x - this.mouseFrom.x, pos.y - this.mouseFrom.y)
+    }
+    this.mouseFrom = null
+  }
+
+  this.onMouseMove = (e) => {
+    if (!this.mouseFrom) { return }
+    const pos = this.tilePos(e.clientX, e.clientY)
+    this.select(this.mouseFrom.x, this.mouseFrom.y, pos.x - this.mouseFrom.x, pos.y - this.mouseFrom.y)
+  }
+
+  this.onCopy = (e) => {
+    const block = this.getBlock()
+    var rows = []
+    for (var i = 0; i < block.length; i++) {
+      rows.push(block[i].join(''))
+    }
+    const content = rows.join('\n')
+    const clipboard = e.clipboardData
+    e.clipboardData.setData('text/plain', content)
+    e.clipboardData.setData('text/source', content)
+    e.preventDefault()
+  }
+
+  this.onCut = (e) => {
+    this.onCopy(e)
+    this.erase()
+  }
+
+  this.onPaste = (e) => {
+    const data = e.clipboardData.getData('text/source')
+    this.writeBlock(data.split(/\r?\n/), false)
+    this.scaleTo(data.split('\n')[0].length, data.split('\n').length)
+    e.preventDefault()
+  }
+
+  this.tilePos = (x, y, w = terminal.tile.w, h = terminal.tile.h) => {
+    return { x: parseInt((x - 30) / w), y: parseInt((y - 30) / h) }
   }
 
   function sense (s) { return s === s.toUpperCase() && s.toLowerCase() !== s.toUpperCase() }

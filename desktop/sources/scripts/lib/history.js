@@ -1,13 +1,13 @@
 'use strict'
 
-export default function History () {
+function History () {
   this.index = 0
   this.frames = []
   this.host = null
   this.key = null
 
   this.bind = function (host, key) {
-    console.log(`History is recording..`)
+    console.log('History is recording..')
     this.host = host
     this.key = key
     this.reset()

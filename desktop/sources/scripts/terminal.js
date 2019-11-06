@@ -1,32 +1,21 @@
 'use strict'
+/* global library */
 
-import Orca from '../../core/orca.js'
-import IO from '../../core/io.js'
-import Cursor from './cursor.js'
-import Source from './source.js'
-import History from './history.js'
-import Commander from './commander.js'
-import Clock from './clock.js'
-import Theme from './lib/theme.js'
-import Controller from './lib/controller.js'
-import library from '../../core/library.js'
-import ZdogCanvas from './zdog.js';
-
-export default function Terminal () {
-  this.version = 138
+function Terminal () {
+  this.version = 146
   this.library = library
 
-  this.orca = new Orca(this)
+  this.acels = new Acels()
+  this.orca = new Orca(this.library)
   this.io = new IO(this)
   this.cursor = new Cursor(this)
   this.source = new Source(this)
   this.commander = new Commander(this)
   this.clock = new Clock(this)
   this.history = new History()
-  this.controller = new Controller()
 
   // Themes
-  this.theme = new Theme({ background: '#000000', f_high: '#ffffff', f_med: '#777777', f_low: '#444444', f_inv: '#000000', b_high: '#eeeeee', b_med: '#72dec2', b_low: '#444444', b_inv: '#ffb545' })
+  this.theme = new Theme()
 
   this.el = document.createElement('canvas')
   this.context = this.el.getContext('2d')
@@ -44,19 +33,103 @@ export default function Terminal () {
   this.hardmode = true
   this.guide = false
 
-  this.install = function (host) {
-    host.appendChild(this.elDog)
-    host.appendChild(this.el)    
+  this.install = (host) => {
+    host.appendChild(this.el)
     this.theme.install(host)
+
+    this.theme.default = { background: '#000000', f_high: '#ffffff', f_med: '#777777', f_low: '#444444', f_inv: '#000000', b_high: '#eeeeee', b_med: '#72dec2', b_low: '#444444', b_inv: '#ffb545' }
+
+    this.acels.set('File', 'New', 'CmdOrCtrl+N', () => { this.source.new() })
+    this.acels.set('File', 'Save', 'CmdOrCtrl+S', () => { this.source.save() })
+    this.acels.set('File', 'Save', 'CmdOrCtrl+Shift+S', () => { this.source.saveAs() })
+    this.acels.set('File', 'Open', 'CmdOrCtrl+O', () => { this.source.open() })
+    this.acels.set('File', 'Revert', 'CmdOrCtrl+W', () => { this.source.revert() })
+
+    this.acels.set('Edit', 'Select All', 'CmdOrCtrl+A', () => { this.cursor.selectAll() })
+    this.acels.set('Edit', 'Erase Selection', 'Backspace', () => { this.cursor.erase() })
+    // this.acels.set('Edit', 'Copy Selection', 'CmdOrCtrl+C', () => { this.cursor.copy() })
+    // this.acels.set('Edit', 'Cut Selection', 'CmdOrCtrl+X', () => { this.cursor.cut() })
+    // this.acels.set('Edit', 'Paste Selection', 'CmdOrCtrl+V', () => { this.cursor.paste(false) })
+    // this.acels.set('Edit', 'Paste Over', 'CmdOrCtrl+Shift+V', () => { this.cursor.paste(true) })
+    this.acels.set('Edit', 'Undo', 'CmdOrCtrl+Z', () => { this.history.undo() })
+    this.acels.set('Edit', 'Redo', 'CmdOrCtrl+Shift+Z', () => { this.history.redo() })
+
+    this.acels.set('Project', 'Find', 'CmdOrCtrl+J', () => { this.commander.start('find:') })
+    this.acels.set('Project', 'Inject', 'CmdOrCtrl+B', () => { this.commander.start('inject:') })
+    this.acels.set('Project', 'Toggle Commander', 'CmdOrCtrl+K', () => { this.commander.start() })
+    this.acels.set('Project', 'Run Commander', 'Enter', () => { this.commander.run() })
+
+    this.acels.set('Cursor', 'Toggle Insert Mode', 'CmdOrCtrl+I', () => { this.cursor.toggleMode(1) })
+    this.acels.set('Cursor', 'Toggle Block Comment', 'CmdOrCtrl+/', () => { this.cursor.comment() })
+    this.acels.set('Cursor', 'Trigger Operator', 'CmdOrCtrl+P', () => { this.cursor.trigger() })
+    this.acels.set('Cursor', 'Reset', 'Escape', () => { terminal.toggleGuide(false); terminal.commander.stop(); terminal.clear(); terminal.isPaused = false; terminal.cursor.reset() })
+
+    this.acels.set('Move', 'Move North', 'ArrowUp', () => { terminal.cursor.move(0, 1) })
+    this.acels.set('Move', 'Move East', 'ArrowRight', () => { terminal.cursor.move(1, 0) })
+    this.acels.set('Move', 'Move South', 'ArrowDown', () => { terminal.cursor.move(0, -1) })
+    this.acels.set('Move', 'Move West', 'ArrowLeft', () => { terminal.cursor.move(-1, 0) })
+    this.acels.set('Move', 'Scale North', 'Shift+ArrowUp', () => { terminal.cursor.scale(0, 1) })
+    this.acels.set('Move', 'Scale East', 'Shift+ArrowRight', () => { terminal.cursor.scale(1, 0) })
+    this.acels.set('Move', 'Scale South', 'Shift+ArrowDown', () => { terminal.cursor.scale(0, -1) })
+    this.acels.set('Move', 'Scale West', 'Shift+ArrowLeft', () => { terminal.cursor.scale(-1, 0) })
+    this.acels.set('Move', 'Drag North', 'Alt+ArrowUp', () => { terminal.cursor.drag(0, 1) })
+    this.acels.set('Move', 'Drag East', 'Alt+ArrowRight', () => { terminal.cursor.drag(1, 0) })
+    this.acels.set('Move', 'Drag South', 'Alt+ArrowDown', () => { terminal.cursor.drag(0, -1) })
+    this.acels.set('Move', 'Drag West', 'Alt+ArrowLeft', () => { terminal.cursor.drag(-1, 0) })
+    this.acels.set('Move', 'Move North(Leap)', 'CmdOrCtrl+ArrowUp', () => { terminal.cursor.move(0, this.grid.h) })
+    this.acels.set('Move', 'Move East(Leap)', 'CmdOrCtrl+ArrowRight', () => { terminal.cursor.move(this.grid.w, 0) })
+    this.acels.set('Move', 'Move South(Leap)', 'CmdOrCtrl+ArrowDown', () => { terminal.cursor.move(0, -this.grid.h) })
+    this.acels.set('Move', 'Move West(Leap)', 'CmdOrCtrl+ArrowLeft', () => { terminal.cursor.move(-this.grid.w, 0) })
+    this.acels.set('Move', 'Scale North(Leap)', 'CmdOrCtrl+Shift+ArrowUp', () => { terminal.cursor.scale(0, this.grid.h) })
+    this.acels.set('Move', 'Scale East(Leap)', 'CmdOrCtrl+Shift+ArrowRight', () => { terminal.cursor.scale(this.grid.w, 0) })
+    this.acels.set('Move', 'Scale South(Leap)', 'CmdOrCtrl+Shift+ArrowDown', () => { terminal.cursor.scale(0, -this.grid.h) })
+    this.acels.set('Move', 'Scale West(Leap)', 'CmdOrCtrl+Shift+ArrowLeft', () => { terminal.cursor.scale(-this.grid.w, 0) })
+    this.acels.set('Move', 'Drag North(Leap)', 'CmdOrCtrl+Alt+ArrowUp', () => { terminal.cursor.drag(0, this.grid.h) })
+    this.acels.set('Move', 'Drag East(Leap)', 'CmdOrCtrl+Alt+ArrowRight', () => { terminal.cursor.drag(this.grid.w, 0) })
+    this.acels.set('Move', 'Drag South(Leap)', 'CmdOrCtrl+Alt+ArrowDown', () => { terminal.cursor.drag(0, -this.grid.h) })
+    this.acels.set('Move', 'Drag West(Leap)', 'CmdOrCtrl+Alt+ArrowLeft', () => { terminal.cursor.drag(-this.grid.w, 0) })
+
+    this.acels.set('Clock', 'Play/Pause', 'Space', () => { this.clock.togglePlay() })
+    this.acels.set('Clock', 'Frame By Frame', 'CmdOrCtrl+F', () => { this.clock.touch() })
+    this.acels.set('Clock', 'Reset Frame', 'CmdOrCtrl+Shift+R', () => { this.clock.resetFrame() })
+    this.acels.set('Clock', 'Incr. Speed', 'Shift+>', () => { this.clock.modSpeed(1) })
+    this.acels.set('Clock', 'Decr. Speed', 'Shift+<', () => { this.clock.modSpeed(-1) })
+    this.acels.set('Clock', 'Incr. Speed(10x)', 'CmdOrCtrl+>', () => { this.clock.modSpeed(10, true) })
+    this.acels.set('Clock', 'Decr. Speed(10x)', 'CmdOrCtrl+<', () => { this.clock.modSpeed(-10, true) })
+
+    this.acels.set('View', 'Toggle Retina', '`', () => { this.toggleRetina() })
+    this.acels.set('View', 'Toggle Hardmode', 'Tab', () => { this.toggleHardmode() })
+    this.acels.set('View', 'Toggle Guide', 'CmdOrCtrl+G', () => { this.toggleGuide() })
+    this.acels.set('View', 'Incr. Col', ']', () => { this.modGrid(1, 0) })
+    this.acels.set('View', 'Decr. Col', '[', () => { this.modGrid(-1, 0) })
+    this.acels.set('View', 'Incr. Row', '}', () => { this.modGrid(0, 1) })
+    this.acels.set('View', 'Decr. Row', '{', () => { this.modGrid(0, -1) })
+    this.acels.set('View', 'Zoom In', 'CmdOrCtrl+=', () => { this.modZoom(0.0625) })
+    this.acels.set('View', 'Zoom Out', 'CmdOrCtrl+-', () => { this.modZoom(-0.0625) })
+    this.acels.set('View', 'Zoom Reset', 'CmdOrCtrl+0', () => { this.modZoom(1, true) })
+
+    this.acels.set('Midi', 'Play/Pause Midi', 'Shift+Space', () => { this.clock.togglePlay(true) })
+    this.acels.set('Midi', 'Next Input Device', 'CmdOrCtrl+}', () => { this.io.midi.selectNextInput() })
+    this.acels.set('Midi', 'Next Output Device', 'CmdOrCtrl+]', () => { this.io.midi.selectNextOutput() })
+    this.acels.set('Midi', 'Refresh Devices', 'CmdOrCtrl+Shift+M', () => { this.io.midi.refresh() })
+
+    this.acels.set('Communication', 'Choose OSC Port', 'CmdOrCtrl+Shift+O', () => { this.commander.start('osc:') })
+    this.acels.set('Communication', 'Choose UDP Port', 'CmdOrCtrl+Shift+U', () => { this.commander.start('udp:') })
+
+    this.acels.install(window)
+    this.acels.pipe(this.commander)
   }
 
-  this.start = function () {
+  this.start = () => {
+    console.info('Terminal', 'Starting..')
+    console.info(`${this.acels}`)
     this.theme.start()
     this.io.start()
     this.source.start()
     this.history.bind(this.orca, 's')
     this.history.record(this.orca.s)
     this.clock.start()
+    this.cursor.start()
     this.update()
     this.el.className = 'ready'
     this.elDog.className = 'el-dog'
@@ -64,10 +137,14 @@ export default function Terminal () {
     this.zdog = new ZdogCanvas(this.elDog)
     this.animate()
 
-    this.toggleGuide(this.reqGuide() === true)
+    this.toggleGuide()
   }
 
-  this.run = function () {
+  this.whenOpen = (file) => {
+
+  }
+
+  this.run = () => {
     this.io.clear()
     this.clock.run()
     this.source.run()
@@ -76,7 +153,7 @@ export default function Terminal () {
     this.update()
   }
 
-  this.update = function () {
+  this.update = () => {
     if (document.hidden === true) { return }
     this.clear()
     this.ports = this.findPorts()
@@ -85,36 +162,29 @@ export default function Terminal () {
     this.drawGuide()
   }
 
-  this.reset = function () {
+  this.reset = () => {
     this.theme.reset()
   }
 
-  this.animate = () => {
-    if(this.zdog) {
-      this.zdog.update()
-    }
-    requestAnimationFrame(this.animate.bind(this))
-  }
-
-  this.setGrid = function (w, h) {
+  this.setGrid = (w, h) => {
     this.grid.w = w
     this.grid.h = h
     this.update()
   }
 
-  this.toggleRetina = function () {
+  this.toggleRetina = () => {
     this.scale = this.scale === 1 ? window.devicePixelRatio : 1
     console.log('Terminal', `Pixel resolution: ${this.scale}`)
     this.resize(true)
   }
 
-  this.toggleHardmode = function () {
+  this.toggleHardmode = () => {
     this.hardmode = this.hardmode !== true
     console.log('Terminal', `Hardmode: ${this.hardmode}`)
     this.update()
   }
 
-  this.toggleGuide = function (force = null) {
+  this.toggleGuide = (force = null) => {
     const display = force !== null ? force : this.guide !== true
     if (display === this.guide) { return }
     console.log('Terminal', `Toggle Guide: ${display}`)
@@ -122,20 +192,20 @@ export default function Terminal () {
     this.update()
   }
 
-  this.reqGuide = function () {
+  this.reqGuide = () => {
     const session = this.source.recall('session')
     console.log('Terminal', 'Session #' + session)
     if (!session || parseInt(session) < 20) { return true }
     return false
   }
 
-  this.modGrid = function (x = 0, y = 0) {
+  this.modGrid = (x = 0, y = 0) => {
     const w = clamp(this.grid.w + x, 4, 16)
     const h = clamp(this.grid.h + y, 4, 16)
     this.setGrid(w, h)
   }
 
-  this.modZoom = function (mod = 0, reset = false) {
+  this.modZoom = (mod = 0, reset = false) => {
     this.tile = {
       w: reset ? 10 : this.tile.w * (mod + 1),
       h: reset ? 15 : this.tile.h * (mod + 1)
@@ -147,39 +217,35 @@ export default function Terminal () {
 
   //
 
-  this.isCursor = function (x, y) {
+  this.isCursor = (x, y) => {
     return x === this.cursor.x && y === this.cursor.y
   }
 
-  this.isSelection = function (x, y) {
-    return !!(x >= this.cursor.x && x < this.cursor.x + this.cursor.w && y >= this.cursor.y && y < this.cursor.y + this.cursor.h)
-  }
-
-  this.isMarker = function (x, y) {
+  this.isMarker = (x, y) => {
     return x % this.grid.w === 0 && y % this.grid.h === 0
   }
 
-  this.isNear = function (x, y) {
+  this.isNear = (x, y) => {
     return x > (parseInt(this.cursor.x / this.grid.w) * this.grid.w) - 1 && x <= ((1 + parseInt(this.cursor.x / this.grid.w)) * this.grid.w) && y > (parseInt(this.cursor.y / this.grid.h) * this.grid.h) - 1 && y <= ((1 + parseInt(this.cursor.y / this.grid.h)) * this.grid.h)
   }
 
-  this.isAligned = function (x, y) {
+  this.isAligned = (x, y) => {
     return x === this.cursor.x || y === this.cursor.y
   }
 
-  this.isEdge = function (x, y) {
+  this.isEdge = (x, y) => {
     return x === 0 || y === 0 || x === this.orca.w - 1 || y === this.orca.h - 1
   }
 
-  this.isLocals = function (x, y) {
+  this.isLocals = (x, y) => {
     return this.isNear(x, y) === true && (x % (this.grid.w / 4) === 0 && y % (this.grid.h / 4) === 0) === true
   }
 
-  this.portAt = function (x, y) {
+  this.portAt = (x, y) => {
     return this.ports[this.orca.indexAt(x, y)]
   }
 
-  this.findPorts = function () {
+  this.findPorts = () => {
     const a = new Array((this.orca.w * this.orca.h) - 1)
     for (const id in this.orca.runtime) {
       const operator = this.orca.runtime[id]
@@ -196,7 +262,7 @@ export default function Terminal () {
 
   // Interface
 
-  this.makeGlyph = function (x, y) {
+  this.makeGlyph = (x, y) => {
     const g = this.orca.glyphAt(x, y)
     if (g !== '.') { return g }
     if (this.isCursor(x, y)) { return this.isPaused ? '~' : '@' }
@@ -204,10 +270,10 @@ export default function Terminal () {
     return g
   }
 
-  this.makeStyle = function (x, y, glyph, selection) {
+  this.makeStyle = (x, y, glyph, selection) => {
     const isLocked = this.orca.lockAt(x, y)
     const port = this.ports[this.orca.indexAt(x, y)]
-    if (this.isSelection(x, y)) { return 4 }
+    if (this.cursor.selected(x, y)) { return 4 }
     if (!port && glyph === '.' && isLocked === false && this.hardmode === true) { return this.isLocals(x, y) === true ? 9 : 7 }
     if (selection === glyph && isLocked === false && selection !== '.') { return 6 }
     if (glyph === '*' && isLocked === false) { return 6 }
@@ -216,7 +282,7 @@ export default function Terminal () {
     return 9
   }
 
-  this.makeTheme = function (type) {
+  this.makeTheme = (type) => {
     // Operator
     if (type === 0) { return { bg: this.theme.active.b_med, fg: this.theme.active.f_low } }
     // Haste
@@ -243,11 +309,11 @@ export default function Terminal () {
 
   // Canvas
 
-  this.clear = function () {
+  this.clear = () => {
     this.context.clearRect(0, 0, this.el.width, this.el.height)
   }
 
-  this.drawProgram = function () {
+  this.drawProgram = () => {
     const selection = this.cursor.read()
     for (let y = 0; y < this.orca.h; y++) {
       for (let x = 0; x < this.orca.w; x++) {
@@ -258,36 +324,32 @@ export default function Terminal () {
     }
   }
 
-  this.drawInterface = function () {
+  this.drawInterface = () => {
     const col = this.grid.w
     const variables = Object.keys(this.orca.variables).join('')
-    const col1 = this.orca.h
-    const col2 = this.orca.h + 1
+
+    // Top Row(cursor)
+
+    this.write(this.orca.f < 15 ? `ver${this.version}` : `${this.cursor.inspect()}`, col * 0, this.orca.h, this.grid.w)
+    this.write(`${this.cursor.x},${this.cursor.y}${this.cursor.mode === 1 ? '+' : ''}`, col * 1, this.orca.h, this.grid.w, this.cursor.mode === 1 ? 1 : 2)
+    this.write(`${this.cursor.w}:${this.cursor.h}`, col * 2, this.orca.h, this.grid.w)
+    this.write(`${this.orca.f}f${this.isPaused ? '*' : ''}`, col * 3, this.orca.h, this.grid.w)
+    this.write(`${this.io.inspect(this.grid.w)}`, col * 4, this.orca.h, this.grid.w)
+
+    // Low Row(project)
 
     if (this.commander.isActive === true) {
-      this.write(`${this.commander.query}${this.orca.f % 2 === 0 ? '_' : ''}`, col * 0, this.orca.h + 1, this.grid.w * 2)
+      this.write(`${this.commander.query}${this.orca.f % 2 === 0 ? '_' : ''}`, col * 0, this.orca.h + 1, this.grid.w * 4)
     } else {
-      this.write(`${this.cursor.x},${this.cursor.y}${this.cursor.mode === 1 ? '+' : ''}`, col * 0, this.orca.h + 1, this.grid.w, this.cursor.mode === 1 ? 1 : 2)
-      this.write(`${this.cursor.w}:${this.cursor.h}`, col * 1, this.orca.h + 1, this.grid.w)
-      this.write(`${this.cursor.inspect()}`, col * 2, this.orca.h + 1, this.grid.w)
-      this.write(`${this.orca.f}f${this.isPaused ? '*' : ''}`, col * 3, this.orca.h + 1, this.grid.w)
-    }
-
-    this.write(`${this.orca.w}x${this.orca.h}`, col * 0, this.orca.h, this.grid.w)
-    this.write(`${this.grid.w}/${this.grid.h}${this.tile.w !== 10 ? ' ' + (this.tile.w / 10).toFixed(1) : ''}`, col * 1, this.orca.h, this.grid.w)
-    this.write(`${this.source}`, col * 2, this.orca.h, this.grid.w, this.source.queue.length > terminal.orca.f ? 3 : 2)
-    this.write(`${this.clock}`, col * 3, this.orca.h, this.grid.w, this.io.midi.inputIndex > -1 ? 3 : 2)
-
-    if (this.orca.f < 15) {
-      this.write(`${this.io.midi}`, col * 4, this.orca.h, this.grid.w * 2)
-      this.write(`Version ${this.version}`, col * 4, this.orca.h + 1, this.grid.w * 2)
-    } else {
-      this.write(`${this.io.inspect(this.grid.w)}`, col * 4, this.orca.h, this.grid.w)
-      this.write(`${display(variables, this.orca.f, this.grid.w)}`, col * 4, this.orca.h + 1, this.grid.w)
+      this.write(`${this.source}`, col * 0, this.orca.h + 1, this.grid.w, this.source.queue.length > this.orca.f ? 3 : 2)
+      this.write(`${this.orca.w}x${this.orca.h}`, col * 1, this.orca.h + 1, this.grid.w)
+      this.write(`${this.grid.w}/${this.grid.h}${this.tile.w !== 10 ? ' ' + (this.tile.w / 10).toFixed(1) : ''}`, col * 2, this.orca.h + 1, this.grid.w)
+      this.write(`${this.clock}`, col * 3, this.orca.h + 1, this.grid.w, this.clock.isPuppet === true ? 3 : 2)
+      this.write(`${this.io.midi}`, col * 4, this.orca.h + 1, this.grid.w * 4)
     }
   }
 
-  this.drawGuide = function () {
+  this.drawGuide = () => {
     if (this.guide !== true) { return }
     const operators = Object.keys(this.library).filter((val) => { return isNaN(val) })
     for (const id in operators) {
@@ -302,7 +364,7 @@ export default function Terminal () {
     }
   }
 
-  this.drawSprite = function (x, y, g, type) {
+  this.drawSprite = (x, y, g, type) => {
     const theme = this.makeTheme(type)
     if (theme.bg) {
       const bgrect = { x: x * this.tile.w * this.scale, y: (y) * this.tile.h * this.scale, w: this.tile.w * this.scale, h: this.tile.h * this.scale }
@@ -316,7 +378,7 @@ export default function Terminal () {
     }
   }
 
-  this.write = function (text, offsetX, offsetY, limit = 50, type = 2) {
+  this.write = (text, offsetX, offsetY, limit = 50, type = 2) => {
     let x = 0
     while (x < text.length && x < limit - 1) {
       this.drawSprite(offsetX + x, offsetY, text.substr(x, 1), type)
@@ -326,7 +388,8 @@ export default function Terminal () {
 
   // Resize tools
 
-  this.fit = function () {
+  this.fit = () => {
+    if (!require('electron')) { return }
     const size = { w: (this.orca.w * this.tile.w) + 60, h: (this.orca.h * this.tile.h) + 60 + (2 * this.tile.h) }
     const win = require('electron').remote.getCurrentWindow()
     const winSize = win.getSize()
@@ -337,7 +400,7 @@ export default function Terminal () {
     this.resize()
   }
 
-  this.resize = function (force = false) {
+  this.resize = (force = false) => {
     const size = { w: window.innerWidth - 60, h: window.innerHeight - (60 + this.tile.h * 2) }
     const tiles = { w: Math.ceil(size.w / this.tile.w), h: Math.ceil(size.h / this.tile.h) }
 
@@ -377,7 +440,7 @@ export default function Terminal () {
     this.update()
   }
 
-  this.crop = function (w, h) {
+  this.crop = (w, h) => {
     let block = `${this.orca}`
 
     if (h > this.orca.h) {
@@ -398,7 +461,7 @@ export default function Terminal () {
 
   // Docs
 
-  this.docs = function () {
+  this.docs = () => {
     let html = ''
     const operators = Object.keys(library).filter((val) => { return isNaN(val) })
     for (const id in operators) {
@@ -425,11 +488,15 @@ export default function Terminal () {
 
     if (!path || path.indexOf('.orca') < 0) { console.log('Orca', 'Not a orca file'); return }
 
-    terminal.source.read(path)
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      this.source.read(path, event.target.result)
+    }
+    reader.readAsText(file, 'UTF-8')
   })
 
   window.onresize = (event) => {
-    terminal.resize()
+    this.resize()
   }
 
   // Helpers

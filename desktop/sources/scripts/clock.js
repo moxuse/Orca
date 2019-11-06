@@ -1,7 +1,9 @@
 'use strict'
 
-export default function Clock (terminal) {
-  const path = require('path')
+/* global Blob */
+
+function Clock (terminal) {
+  const worker = 'onmessage = (e) => { setInterval(() => { postMessage(true) }, e.data)}'
 
   this.isPaused = true
   this.timer = null
@@ -21,54 +23,53 @@ export default function Clock (terminal) {
 
   this.run = function () {
     if (this.speed.target === this.speed.value) { return }
-    this.set(this.speed.value + (this.speed.value < this.speed.target ? 1 : -1), null, true)
+    this.setSpeed(this.speed.value + (this.speed.value < this.speed.target ? 1 : -1), null, true)
   }
 
-  this.set = function (value, target = null, setTimer = false) {
+  this.setSpeed = function (value, target = null, setTimer = false) {
+    console.info('Clock', 'set', value)
     if (value) { this.speed.value = clamp(value, 60, 300) }
     if (target) { this.speed.target = clamp(target, 60, 300) }
     if (setTimer === true) { this.setTimer(this.speed.value) }
   }
 
-  this.mod = function (mod = 0, animate = false) {
+  this.modSpeed = function (mod = 0, animate = false) {
     if (animate === true) {
-      this.set(null, this.speed.target + mod)
+      this.setSpeed(null, this.speed.target + mod)
     } else {
-      this.set(this.speed.value + mod, this.speed.value + mod, true)
+      this.setSpeed(this.speed.value + mod, this.speed.value + mod, true)
       terminal.update()
     }
   }
 
   // Controls
 
-  this.togglePlay = function () {
-    // If in insert mode, insert space
-    if (terminal.cursor.mode === 1) {
-      terminal.cursor.move(1, 0)
-      return
-    }
+  this.togglePlay = function (msg = false) {
     if (this.isPaused === true) {
-      this.play()
+      this.play(msg)
     } else {
-      this.stop()
+      this.stop(msg)
     }
   }
 
-  this.play = function () {
-    if (!this.isPaused) { console.warn('Already playing'); return }
+  this.play = function (msg = false) {
     console.log('Clock', 'Play')
+    if (this.isPaused === false) { return }
+    if (this.isPuppet === true) { console.warn('Clock', 'External Midi control'); return }
     this.isPaused = false
-    if (this.isPuppet) { return console.warn('External Midi control') }
-    this.set(this.speed.target, this.speed.target, true)
+    if (msg === true) { terminal.io.midi.sendClockStart() }
+    this.setSpeed(this.speed.target, this.speed.target, true)
   }
 
-  this.stop = function () {
-    if (this.isPaused) { console.warn('Already stopped'); return }
+  this.stop = function (msg = false) {
     console.log('Clock', 'Stop')
-    terminal.io.midi.silence()
+    if (this.isPaused === true) { console.warn('Clock', 'Already stopped'); return }
+    if (this.isPuppet === true) { console.warn('Clock', 'External Midi control'); return }
     this.isPaused = true
-    if (this.isPuppet) { return console.warn('External Midi control') }
+    if (msg === true) { terminal.io.midi.sendClockStop() }
+    terminal.io.midi.allNotesOff()
     this.clearTimer()
+    terminal.io.midi.silence()
   }
 
   // External Clock
@@ -108,9 +109,12 @@ export default function Clock (terminal) {
   this.setTimer = function (bpm) {
     console.log('Clock', 'New Timer ' + bpm + 'bpm')
     this.clearTimer()
-    this.timer = new Worker(`${__dirname}/scripts/timer.js`)
+    this.timer = new Worker(window.URL.createObjectURL(new Blob([worker], { type: 'text/javascript' })))
     this.timer.postMessage((60000 / bpm) / 4)
-    this.timer.onmessage = (event) => { terminal.run() }
+    this.timer.onmessage = (event) => {
+      terminal.io.midi.sendClock()
+      terminal.run()
+    }
   }
 
   this.clearTimer = function () {
@@ -134,7 +138,7 @@ export default function Clock (terminal) {
   this.toString = function () {
     const diff = this.speed.target - this.speed.value
     const _offset = Math.abs(diff) > 5 ? (diff > 0 ? `+${diff}` : diff) : ''
-    const _message = this.isPuppet ? 'midi' : `${this.speed.value}${_offset}`
+    const _message = this.isPuppet === true ? 'midi' : `${this.speed.value}${_offset}`
     const _beat = diff === 0 && terminal.orca.f % 4 === 0 ? '*' : ''
     return `${_message}${_beat}`
   }

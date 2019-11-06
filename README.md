@@ -1,12 +1,12 @@
 # ORCΛ
 
-<img src='https://raw.githubusercontent.com/hundredrabbits/Orca/master/resources/logo.png?v=1' width="600"/>
+<img src="https://raw.githubusercontent.com/hundredrabbits/100r.co/master/media/content/characters/orca.hello.png" width="300"/>
 
-**Each letter of the alphabet is an operation**, <br />lowercase letters operate on bang, uppercase letters operate each frame. 
+Orca uses an <strong>esoteric programming language</strong> designed to quickly create procedural sequencers, in which every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame.
 
-**To learn more**, have a look at some projects created with [#ORCΛ](https://twitter.com/hashtag/ORCΛ), watch the [introduction video](https://www.youtube.com/watch?v=RaI_TuISSJE), or check out the [examples](https://github.com/hundredrabbits/Orca/tree/master/examples) & [tutorials](TUTORIAL.md). If you need some help, visit the [forum](https://llllllll.co/t/orca-live-coding-tool/17689), or the [chatroom](https://talk.lurk.org/channel/orca). 
+The <a href="http://github.com/hundredrabbits/Orca" target="_blank" rel="noreferrer" class="external ">application</a> <strong>is not a synthesizer, but a flexible livecoding environment</strong> capable of sending MIDI, OSC & UDP to your audio interface, like Ableton, Renoise, VCV Rack or SuperCollider.
 
-If you're looking for a **portable distribution**, visit [Orca-c](http://github.com/hundredrabbits/Orca-c). If you're looking for the library for your [Monome Norns](https://monome.org/norns/), visit [Orca Norns](https://github.com/itsyourbedtime/orca/).
+Learn more by reading the <a href="https://github.com/Hundredrabbits/Orca" target="_blank" rel="noreferrer" class="external ">manual</a>, or have a look at a <a href="https://www.youtube.com/watch?v=RaI_TuISSJE" target="_blank" rel="noreferrer" class="external ">tutorial video</a>. If you need <strong>help</strong>, visit the <a href="https://talk.lurk.org/channel/orca" target="_blank" rel="noreferrer" class="external ">chatroom</a> or the <a href="https://llllllll.co/t/orca-live-coding-tool/17689" target="_blank" rel="noreferrer" class="external ">forum</a>.
 
 ## Install & Run
 
@@ -57,9 +57,10 @@ npm start
 - `:` **midi**(channel octave note velocity length): Sends a MIDI note.
 - `%` **mono**(channel octave note velocity length): Sends monophonic MIDI note.
 - `!` **cc**(channel knob value): Sends MIDI control change.
-- `&` **keys**(channel): Receive a MIDI note.
+- `?` **pb**(channel value): Sends MIDI pitch bench.
 - `;` **udp**: Sends UDP message.
 - `=` **osc**(*path*): Sends OSC message.
+- `$` **self**: Sends a [command](#Commands) to itself.
 
 ## MIDI
 
@@ -77,7 +78,21 @@ This operator is very similar to the default Midi operator, but **each new note 
 
 The [MIDI CC](https://www.sweetwater.com/insync/continuous-controller/) operator `!` takes 3 inputs('channel, 'knob, 'value).
 
-It sends a value **between 0-127**, where the value is calculated as a ratio of 36, over a maximum of 127. For example, `!008`, is sending **28**, or `(8/36)*127` through the first channel, to the control mapped with `id0`. You can press **enter**, with the `!` operator selected, to assign it to a controller.
+It sends a value **between 0-127**, where the value is calculated as a ratio of 36, over a maximum of 127. For example, `!008`, is sending **28**, or `(8/36)*127` through the first channel, to the control mapped with `id0`. You can press **enter**, with the `!` operator selected, to assign it to a controller. By default, the operator sends to `CC64` [and up](https://nickfever.com/Music/midi-cc-list), the offset can be changed with the [command](#commands) `cc:0`, to set the offset to 0.
+
+## MIDI PITCHBEND
+
+The [MIDI PB](https://www.sweetwater.com/insync/pitch-bend/) operator `?` takes 3 inputs('channel, 'lsb, 'msb).
+
+It sends two different values **between 0-127**, where the value is calculated as a ratio of 36, over a maximum of 127. For example, `?008`, is sending an MSB of **28**, or `(8/36)*127` and an LSB of 0 through the first midi channel.
+
+## MIDI BANK SELECT / PROGRAM CHANGE
+
+This is a command (see below) rather than an operator and it combines the [MIDI program change and bank select functions](https://www.sweetwater.com/sweetcare/articles/6-what-msb-lsb-refer-for-changing-banks-andprograms/). 
+
+The syntax is `pg:channel;msb;lsb;program`. Channel is 0-15, msb/lsb/program are 0-127, but program will automatically be translated to 1-128 by the MIDI driver. `program` typically correspondes to a "patch" selection on a synth. Note that `msb` may also be identified as "bank" and `lsb` as "sub" in some applications (like Ableton Live). 
+
+`msb` and `lsb` can be left blank if you only want to send a simple program change. For example, `pg:0;;;63` will set the synth to patch number 64 (without changing the bank)
 
 ## UDP
 
@@ -105,7 +120,7 @@ Some of Orca's features can be **controlled externally** via UDP though port `49
 
 ### Commands
 
-All commands have a shorthand equivalent to their first two characters, for example, `write` can also be called using `wr`.
+All commands have a shorthand equivalent to their first two characters, for example, `write` can also be called using `wr`. You can see the full list of commands [here](https://github.com/hundredrabbits/Orca/blob/master/desktop/sources/scripts/commander.js).
 
 - `play` Plays program.
 - `stop` Stops program.
@@ -116,11 +131,11 @@ All commands have a shorthand equivalent to their first two characters, for exam
 - `skip:2` Adds `2`, to the current frame value.
 - `rewind:2` Removes `2`, to the current frame value.
 - `color:f00;0f0;00f` Colorizes the interface.
-- `graphic:123` Set the background to the local graphic `123.jpg`.
+- `graphic:123;jpg` Set the background to the local graphic `123.jpg`, with extension `jpg`(optional).
 - `find:aV` Sends cursor to string `aV`.
-- `select:3;4;5;6` Move cursor to position `3,4`, and select size `5:6`.
-- `inject:pattern` Inject the local file `pattern.orca`.
-- `write:H;12;34` Writes glyph `H`, at `12,34`.
+- `select:3;4;5;6` Move cursor to position `3,4`, and select size `5:6`(optional).
+- `inject:pattern;12;34` Inject the local file `pattern.orca`, at `12,34`(optional).
+- `write:H;12;34` Writes glyph `H`, at `12,34`(optional).
 
 ### Project Mode
 
@@ -130,7 +145,7 @@ If a file a local file `.queue` is found, each line will be ran as a command whe
 
 ## Base36 Table
 
-Orca operates on a base of **36 increments**. Operators using numeric values will typically also operate on letters and convert them into values as per the following table. For instance `Dp` will bang every *24th frame*. 
+Orca operates on a base of **36 increments**. Operators using numeric values will typically also operate on letters and convert them into values as per the following table. For instance `Do` will bang every *24th frame*. 
 
 | **0** | **1** | **2** | **3** | **4** | **5** | **6** | **7** | **8** | **9** | **A** | **B**  | 
 | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | 
@@ -159,6 +174,7 @@ The midi operator interprets any letter above the chromatic scale as a transpose
 - [Estra](https://github.com/kyleaedwards/estra), a companion sampler tool.
 - [Gull](https://github.com/qleonetti/gull), a companion sampler, slicer and synth tool.
 - [Sonic Pi](https://in-thread.sonic-pi.net/t/using-orca-to-control-sonic-pi-with-osc/2381/), a livecoding environment.
+- [Remora](https://github.com/martinberlin/Remora), a ESP32 Led controller firmware.
 
 ## Tutorials
 

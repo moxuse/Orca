@@ -1,12 +1,6 @@
 'use strict'
 
-import Midi from './io/midi.js'
-import MidiCC from './io/cc.js'
-import Mono from './io/mono.js'
-import Udp from './io/udp.js'
-import Osc from './io/osc.js'
-
-export default function IO (terminal) {
+function IO (terminal) {
   this.ip = '127.0.0.1'
 
   this.midi = new Midi(terminal)
@@ -46,7 +40,7 @@ export default function IO (terminal) {
   }
 
   this.setIp = function (addr = '127.0.0.1') {
-    if (validateIP(addr) !== true) { console.warn('IO', 'Invalid IP'); return }
+    if (validateIP(addr) !== true && addr.indexOf('.local') === -1) { console.warn('IO', 'Invalid IP'); return }
     this.ip = addr
     console.log('IO', 'Set target IP to ' + this.ip)
     this.osc.setup()

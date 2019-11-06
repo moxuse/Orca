@@ -1,9 +1,11 @@
 'use strict'
 
-export default function Source (terminal) {
+function Source (terminal) {
   const fs = require('fs')
   const path = require('path')
-  const { dialog, app } = require('electron').remote
+  const electron = require('electron')
+  const dialog = electron ? electron.remote.dialog : null
+  const app = electron ? electron.remote.app : null
 
   this.path = null
   this.queue = []
@@ -26,14 +28,17 @@ export default function Source (terminal) {
 
   this.open = function () {
     console.log('Source', 'Open a file..')
-    let paths = dialog.showOpenDialog(app.win, { properties: ['openFile'], filters: [{ name: 'Orca Machines', extensions: ['orca'] }] })
+    const paths = dialog.showOpenDialogSync(app.win, { properties: ['openFile'], filters: [{ name: 'Orca Machines', extensions: ['orca'] }] })
     if (!paths) { console.log('Nothing to load'); return }
     this.read(paths[0])
+    terminal.toggleGuide(false)
   }
 
   this.save = function (quitAfter = false) {
-    console.log('Source', 'Save a file..')
-    if (this.path) {
+    console.log('Source', 'Saving file..')
+    if (!require('electron')) {
+      this.download('orca', 'orca', this.generate(), 'text/plain')
+    } else if (this.path) {
       this.write(this.path, this.generate(), quitAfter)
     } else {
       this.saveAs(quitAfter)
@@ -42,12 +47,22 @@ export default function Source (terminal) {
 
   this.saveAs = function (quitAfter = false) {
     console.log('Source', 'Save a file as..')
-    dialog.showSaveDialog((loc) => {
-      if (loc === undefined) { return }
-      if (loc.indexOf('.orca') < 0) { loc += '.orca' }
-      this.write(loc, this.generate(), quitAfter)
-      this.path = loc
-    })
+    const path = dialog.showSaveDialogSync(app.win, { filters: [{ name: 'Orca Machines', extensions: ['orca'] }] })
+    if (!path) { console.log('Nothing to save'); return }
+    this.write(path.indexOf('.orca') < 0 ? path + '.orca' : path, this.generate(), quitAfter)
+    console.log('Source', 'Saved ' + path)
+    this.path = path
+  }
+
+  this.download = (name, ext, content, type, settings = 'charset=utf-8') => {
+    const link = document.createElement('a')
+    link.setAttribute('download', `${name}-${timestamp()}.${ext}`)
+    if (type === 'image/png' || type === 'image/jpeg') {
+      link.setAttribute('href', content)
+    } else {
+      link.setAttribute('href', 'data:' + type + ';' + settings + ',' + encodeURIComponent(content))
+    }
+    link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
   }
 
   this.revert = function () {
@@ -82,8 +97,10 @@ export default function Source (terminal) {
     }
   }
 
-  this.read = function (loc = this.path) {
+  this.read = function (loc = this.path, content = '') {
     if (!loc) { return }
+    if (!fs && !content) { console.warn('Source', 'FileSystem unavailable'); return }
+    if (!fs && content) { this.load(content); return }
     if (!fs.existsSync(loc)) { console.warn('Source', 'File does not exist: ' + loc); return }
     console.log('Source', 'Reading ' + loc)
     this.path = loc
@@ -125,7 +142,7 @@ export default function Source (terminal) {
   }
 
   this.verify = function () {
-    let response = dialog.showMessageBox(app.win, {
+    const response = dialog.showMessageBoxSync(app.win, {
       type: 'question',
       buttons: ['Cancel', 'Discard', 'Save'],
       title: 'Confirm',
@@ -144,7 +161,7 @@ export default function Source (terminal) {
     if (!this.path) {
       console.log('Source', 'File is unsaved..')
       if (terminal.orca.length() > 2) {
-        console.log('Source', `File is not empty.`)
+        console.log('Source', 'File is not empty.')
         return true
       }
     } else {
@@ -230,5 +247,10 @@ export default function Source (terminal) {
       c += !terminal.orca.isAllowed(char) ? '.' : char
     }
     return c
+  }
+
+  function timestamp (d = new Date(), e = new Date(d)) {
+    const ms = e - d.setHours(0, 0, 0, 0)
+    return (ms / 8640 / 10000).toFixed(6).substr(2, 6)
   }
 }
