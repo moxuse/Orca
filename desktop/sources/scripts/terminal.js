@@ -20,9 +20,6 @@ function Terminal () {
   this.el = document.createElement('canvas')
   this.context = this.el.getContext('2d')
 
-  this.elDog = document.createElement('canvas')
-  this.contextDog = this.el.getContext('2d')
-
   // Settings
   this.grid = { w: 8, h: 8 }
   this.tile = {
@@ -132,8 +129,6 @@ function Terminal () {
     this.cursor.start()
     this.update()
     this.el.className = 'ready'
-    this.elDog.className = 'el-dog'
-    this.animate()
 
     this.toggleGuide()
   }
@@ -421,15 +416,6 @@ function Terminal () {
     this.el.style.width = `${Math.ceil(this.tile.w * this.orca.w)}px`
     this.el.style.height = `${Math.ceil((this.tile.h + (this.tile.h / 5)) * this.orca.h)}px`
     this.el.style.position = `absolute`
-
-    this.elDog.width = this.tile.w * this.orca.w * this.scale + 180;
-    this.elDog.height = (this.tile.h + (this.tile.h / 5)) * this.orca.h * this.scale + 80;
-    this.elDog.style.width = `${Math.ceil(this.tile.w * this.orca.w)}px` + 180
-    this.elDog.style.height = `${Math.ceil((this.tile.h + (this.tile.h / 5)) * this.orca.h)}px` + 80
-    this.elDog.style.position = `absolute`
-    this.elDog.style.left = -40;
-    this.elDog.style.top = -40;
-    // this.elDog.style.zIndex = `100`
 
     this.context.textBaseline = 'bottom'
     this.context.textAlign = 'center'
