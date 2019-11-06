@@ -133,8 +133,6 @@ function Terminal () {
     this.update()
     this.el.className = 'ready'
     this.elDog.className = 'el-dog'
-
-    this.zdog = new ZdogCanvas(this.elDog)
     this.animate()
 
     this.toggleGuide()
