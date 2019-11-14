@@ -1,11 +1,11 @@
 'use strict'
 
-function MidiCC (terminal) {
+function MidiCC (client) {
   this.stack = []
   this.offset = 64
 
   this.start = function () {
-    console.info('CC', 'Starting..')
+    console.info('MidiCC', 'Starting..')
   }
 
   this.clear = function () {
@@ -14,7 +14,7 @@ function MidiCC (terminal) {
 
   this.run = function () {
     if (this.stack.length < 1) { return }
-    const device = terminal.io.midi.outputDevice()
+    const device = client.io.midi.outputDevice()
     if (!device) { console.warn('CC', 'No Midi device.'); return }
     for (const id in this.stack) {
       const msg = this.stack[id]

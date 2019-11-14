@@ -1,6 +1,6 @@
 'use strict'
 
-function Mono (terminal) {
+function Mono (client) {
   this.stack = {}
 
   this.start = function () {
@@ -26,19 +26,19 @@ function Mono (terminal) {
 
   this.press = function (item) {
     if (!item) { return }
-    terminal.io.midi.trigger(item, true)
+    client.io.midi.trigger(item, true)
     item.isPlayed = true
   }
 
   this.release = function (item) {
     if (!item) { return }
-    terminal.io.midi.trigger(item, false)
+    client.io.midi.trigger(item, false)
     delete this.stack[item.channel]
   }
 
   this.silence = function () {
-    for (const id in this.stack) {
-      this.release(this.stack[id])
+    for (const item of this.stack) {
+      this.release(item)
     }
   }
 

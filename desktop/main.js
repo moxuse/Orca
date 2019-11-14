@@ -26,7 +26,7 @@ app.on('ready', () => {
   })
 
   app.win.loadURL(`file://${__dirname}/sources/index.html`)
-  app.inspect()
+  // app.inspect()
 
   app.win.on('closed', () => {
     app.quit()
@@ -66,7 +66,7 @@ app.toggleMenubar = function () {
 }
 
 app.toggleVisible = function () {
-  if (process.platform === 'win32') {
+  if (process.platform !== 'darwin') {
     if (!app.win.isMinimized()) { app.win.minimize() } else { app.win.restore() }
   } else {
     if (isShown && !app.win.isFullScreen()) { app.win.hide() } else { app.win.show() }

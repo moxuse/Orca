@@ -2,7 +2,7 @@
 
 /* global transposeTable */
 
-function Midi (terminal) {
+function Midi (client) {
   this.mode = 0
   this.isClock = false
 
@@ -24,8 +24,9 @@ function Midi (terminal) {
 
   this.run = function () {
     for (const id in this.stack) {
-      if (this.stack[id].length < 1) {
-        this.release(this.stack[id], id)
+      const item = this.stack[id]
+      if (item.length < 1) {
+        this.release(item, id)
       }
       if (!this.stack[id]) { continue }
       if (this.stack[id].isPlayed === false) {
@@ -39,7 +40,7 @@ function Midi (terminal) {
     if (!this.outputDevice()) { console.warn('MIDI', 'No midi output!'); return }
 
     const transposed = this.transpose(item.note, item.octave)
-    const channel = !isNaN(item.channel) ? parseInt(item.channel) : terminal.orca.valueOf(item.channel)
+    const channel = !isNaN(item.channel) ? parseInt(item.channel) : client.orca.valueOf(item.channel)
 
     if (!transposed) { return }
 
@@ -65,8 +66,8 @@ function Midi (terminal) {
   }
 
   this.silence = function () {
-    for (const id in this.stack) {
-      this.release(this.stack[id])
+    for (const item of this.stack) {
+      this.release(item)
     }
   }
 
@@ -74,7 +75,8 @@ function Midi (terminal) {
     const item = { channel, octave, note, velocity, length, isPlayed }
     // Retrigger duplicates
     for (const id in this.stack) {
-      if (this.stack[id].channel === channel && this.stack[id].octave === octave && this.stack[id].note === note) { this.release(item, id) }
+      const dup = this.stack[id]
+      if (dup.channel === channel && dup.octave === octave && dup.note === note) { this.release(item, id) }
     }
     this.stack.push(item)
   }
@@ -93,14 +95,14 @@ function Midi (terminal) {
 
   this.toggleClock = function () {
     this.isClock = !this.isClock
-    terminal.clock.stop()
+    client.clock.stop()
   }
 
   this.sendClock = function () {
     if (!this.outputDevice()) { return }
     if (this.isClock !== true) { return }
 
-    const bpm = terminal.clock.speed.value
+    const bpm = client.clock.speed.value
     const frameTime = (60000 / bpm) / 4
     const frameFrag = frameTime / 6
 
@@ -135,24 +137,24 @@ function Midi (terminal) {
 
     // listen for clock all the time
     // check for clock in?
-    if (msg.data[0] === 0xF8) { terminal.clock.tap() }
+    if (msg.data[0] === 0xF8) { client.clock.tap() }
 
     switch (msg.data[0]) {
       // Clock
       // case 0xF8:
-      //  terminal.clock.tap()
+      //  client.clock.tap()
       //  break
       case 0xFA:
         console.log('MIDI', 'Start Received')
-        terminal.clock.play()
+        client.clock.play()
         break
       case 0xFB:
         console.log('MIDI', 'Continue Received')
-        terminal.clock.play()
+        client.clock.play()
         break
       case 0xFC:
         console.log('MIDI', 'Stop Received')
-        terminal.clock.stop()
+        client.clock.stop()
         break
     }
   }
@@ -187,12 +189,12 @@ function Midi (terminal) {
 
   this.selectNextOutput = () => {
     this.outputIndex = this.outputIndex < this.outputs.length ? this.outputIndex + 1 : 0
-    terminal.update()
+    client.update()
   }
 
   this.selectNextInput = () => {
     this.inputIndex = this.inputIndex < this.inputs.length ? this.inputIndex + 1 : 0
-    terminal.update()
+    client.update()
   }
 
   // Setup

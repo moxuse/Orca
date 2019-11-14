@@ -45,8 +45,10 @@ function Orca (library) {
     return true
   }
 
-  this.clean = function (str) {
-    return `${str}`.replace(/\n/g, '').trim().substr(0, this.w * this.h)
+  this.clean = (str) => {
+    return `${str}`.replace(/\n/g, '').trim().substr(0, this.w * this.h).split('').map((g) => {
+      return !this.isAllowed(g) ? '.' : g
+    }).join('')
   }
 
   this.replace = function (s) {
@@ -78,8 +80,7 @@ function Orca (library) {
 
   this.operate = function (operators) {
     this.release()
-    for (const id in operators) {
-      const operator = operators[id]
+    for (const operator of operators) {
       if (this.lockAt(operator.x, operator.y)) { continue }
       if (operator.passive || operator.hasNeighbor('*')) {
         operator.run()
@@ -99,7 +100,7 @@ function Orca (library) {
         }
       }
     }
-    return { w: w, h: h }
+    return { w, h }
   }
 
   // Locks
