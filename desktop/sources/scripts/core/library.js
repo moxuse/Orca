@@ -22,21 +22,20 @@ library.a = function OperatorA (orca, x, y, passive) {
   }
 }
 
-library.b = function OperatorB (orca, x, y, passive) {
+library.b = function OperatorL (orca, x, y, passive) {
   Operator.call(this, orca, x, y, 'b', passive)
 
   this.name = 'bounce'
-  this.info = 'Outputs values between inputs'
+  this.info = 'Outputs difference between inputs'
 
-  this.ports.rate = { x: -1, y: 0, clamp: { min: 1 } }
-  this.ports.mod = { x: 1, y: 0, default: '8' }
+  this.ports.a = { x: -1, y: 0 }
+  this.ports.b = { x: 1, y: 0 }
   this.ports.output = { x: 0, y: 1, sensitive: true }
 
   this.operation = function (force = false) {
-    const rate = this.listen(this.ports.rate, true)
-    const mod = this.listen(this.ports.mod, true) - 1
-    const key = Math.floor(orca.f / rate) % (mod * 2)
-    return orca.keyOf(key <= mod ? key : mod - (key - mod))
+    const a = this.listen(this.ports.a, true)
+    const b = this.listen(this.ports.b, true)
+    return orca.keyOf(Math.abs(b - a))
   }
 }
 
@@ -102,7 +101,7 @@ library.f = function OperatorF (orca, x, y, passive) {
   this.operation = function (force = false) {
     const a = this.listen(this.ports.a)
     const b = this.listen(this.ports.b)
-    return a === b && a !== '.'
+    return a === b
   }
 }
 
@@ -205,27 +204,17 @@ library.k = function OperatorK (orca, x, y, passive) {
 library.l = function OperatorL (orca, x, y, passive) {
   Operator.call(this, orca, x, y, 'l', passive)
 
-  this.name = 'loop'
-  this.info = 'Moves eastward operands'
+  this.name = 'lesser'
+  this.info = 'Outputs smallest input'
 
-  this.ports.step = { x: -2, y: 0, default: '1' }
-  this.ports.len = { x: -1, y: 0 }
-  this.ports.val = { x: 1, y: 0 }
-  this.ports.output = { x: 0, y: 1 }
+  this.ports.a = { x: -1, y: 0 }
+  this.ports.b = { x: 1, y: 0 }
+  this.ports.output = { x: 0, y: 1, sensitive: true }
 
   this.operation = function (force = false) {
-    const len = this.listen(this.ports.len, true)
-    const step = this.listen(this.ports.step, true)
-    const index = orca.indexAt(this.x + 1, this.y)
-    const seg = orca.s.substr(index, len)
-    const res = seg.substr(len - step, step) + seg.substr(0, len - step)
-    for (let offset = 0; offset <= len; offset++) {
-      if (offset > 0) {
-        orca.lock(this.x + offset, this.y)
-      }
-      orca.write(this.x + offset + 1, this.y, res.charAt(offset))
-    }
-    return this.listen(this.ports.val)
+    const a = this.listen(this.ports.a)
+    const b = this.listen(this.ports.b)
+    return a !== '.' && b !== '.' ? orca.keyOf(Math.min(orca.valueOf(a), orca.valueOf(b))) : '.'
   }
 }
 
@@ -518,7 +507,7 @@ library.$ = function OperatorSelf (orca, x, y, passive) {
   Operator.call(this, orca, x, y, '*', true)
 
   this.name = 'self'
-  this.info = 'Send command to itself'
+  this.info = 'Sends ORCA command'
 
   this.run = function (force = false) {
     let msg = ''
@@ -533,36 +522,7 @@ library.$ = function OperatorSelf (orca, x, y, passive) {
     if (msg === '') { return }
 
     this.draw = false
-    client.commander.trigger(`${msg}`)
-  }
-}
-
-library['!'] = function OperatorCC (orca, x, y) {
-  Operator.call(this, orca, x, y, '!', true)
-
-  this.name = 'cc'
-  this.info = 'Sends MIDI control change'
-  this.ports.channel = { x: 1, y: 0, clamp: { min: 0, max: 15 } }
-  this.ports.knob = { x: 2, y: 0, clamp: { min: 0 } }
-  this.ports.value = { x: 3, y: 0, clamp: { min: 0 } }
-
-  this.operation = function (force = false) {
-    if (!this.hasNeighbor('*') && force === false) { return }
-    if (this.listen(this.ports.channel) === '.') { return }
-    if (this.listen(this.ports.knob) === '.') { return }
-
-    const channel = this.listen(this.ports.channel, true)
-    const knob = this.listen(this.ports.knob, true)
-    const rawValue = this.listen(this.ports.value, true)
-    const value = Math.ceil((127 * rawValue) / 35)
-
-    client.io.cc.stack.push({ channel, knob, value, type: 'cc' })
-
-    this.draw = false
-
-    if (force === true) {
-      client.io.cc.run()
-    }
+    client.commander.trigger(`${msg}`, { x, y: y + 1 })
   }
 }
 
@@ -571,11 +531,11 @@ library[':'] = function OperatorMidi (orca, x, y, passive) {
 
   this.name = 'midi'
   this.info = 'Sends MIDI note'
-  this.ports.channel = { x: 1, y: 0, clamp: { min: 0, max: 16 } }
+  this.ports.channel = { x: 1, y: 0 }
   this.ports.octave = { x: 2, y: 0, clamp: { min: 0, max: 8 } }
   this.ports.note = { x: 3, y: 0 }
   this.ports.velocity = { x: 4, y: 0, default: 'f', clamp: { min: 0, max: 16 } }
-  this.ports.length = { x: 5, y: 0, default: '1', clamp: { min: 0, max: 16 } }
+  this.ports.length = { x: 5, y: 0, default: '1', clamp: { min: 0, max: 32 } }
 
   this.operation = function (force = false) {
     if (!this.hasNeighbor('*') && force === false) { return }
@@ -585,6 +545,7 @@ library[':'] = function OperatorMidi (orca, x, y, passive) {
     if (!isNaN(this.listen(this.ports.note))) { return }
 
     const channel = this.listen(this.ports.channel, true)
+    if (channel > 15) { return }
     const octave = this.listen(this.ports.octave, true)
     const note = this.listen(this.ports.note)
     const velocity = this.listen(this.ports.velocity, true)
@@ -600,16 +561,76 @@ library[':'] = function OperatorMidi (orca, x, y, passive) {
   }
 }
 
+library['!'] = function OperatorCC (orca, x, y) {
+  Operator.call(this, orca, x, y, '!', true)
+
+  this.name = 'cc'
+  this.info = 'Sends MIDI control change'
+  this.ports.channel = { x: 1, y: 0 }
+  this.ports.knob = { x: 2, y: 0, clamp: { min: 0 } }
+  this.ports.value = { x: 3, y: 0, clamp: { min: 0 } }
+
+  this.operation = function (force = false) {
+    if (!this.hasNeighbor('*') && force === false) { return }
+    if (this.listen(this.ports.channel) === '.') { return }
+    if (this.listen(this.ports.knob) === '.') { return }
+
+    const channel = this.listen(this.ports.channel, true)
+    if (channel > 15) { return }
+    const knob = this.listen(this.ports.knob, true)
+    const rawValue = this.listen(this.ports.value, true)
+    const value = Math.ceil((127 * rawValue) / 35)
+
+    client.io.cc.stack.push({ channel, knob, value, type: 'cc' })
+
+    this.draw = false
+
+    if (force === true) {
+      client.io.cc.run()
+    }
+  }
+}
+
+library['?'] = function OperatorPB (orca, x, y) {
+  Operator.call(this, orca, x, y, '?', true)
+
+  this.name = 'pb'
+  this.info = 'Sends MIDI pitch bend'
+  this.ports.channel = { x: 1, y: 0, clamp: { min: 0, max: 15 } }
+  this.ports.lsb = { x: 2, y: 0, clamp: { min: 0 } }
+  this.ports.msb = { x: 3, y: 0, clamp: { min: 0 } }
+
+  this.operation = function (force = false) {
+    if (!this.hasNeighbor('*') && force === false) { return }
+    if (this.listen(this.ports.channel) === '.') { return }
+    if (this.listen(this.ports.lsb) === '.') { return }
+
+    const channel = this.listen(this.ports.channel, true)
+    const rawlsb = this.listen(this.ports.lsb, true)
+    const lsb = Math.ceil((127 * rawlsb) / 35)
+    const rawmsb = this.listen(this.ports.msb, true)
+    const msb = Math.ceil((127 * rawmsb) / 35)
+
+    client.io.cc.stack.push({ channel, lsb, msb, type: 'pb' })
+
+    this.draw = false
+
+    if (force === true) {
+      client.io.cc.run()
+    }
+  }
+}
+
 library['%'] = function OperatorMono (orca, x, y, passive) {
   Operator.call(this, orca, x, y, '%', true)
 
   this.name = 'mono'
   this.info = 'Sends MIDI monophonic note'
-  this.ports.channel = { x: 1, y: 0, clamp: { min: 0, max: 16 } }
+  this.ports.channel = { x: 1, y: 0 }
   this.ports.octave = { x: 2, y: 0, clamp: { min: 0, max: 8 } }
   this.ports.note = { x: 3, y: 0 }
   this.ports.velocity = { x: 4, y: 0, default: 'f', clamp: { min: 0, max: 16 } }
-  this.ports.length = { x: 5, y: 0, default: '1', clamp: { min: 0, max: 16 } }
+  this.ports.length = { x: 5, y: 0, default: '1', clamp: { min: 0, max: 32 } }
 
   this.operation = function (force = false) {
     if (!this.hasNeighbor('*') && force === false) { return }
@@ -619,6 +640,7 @@ library['%'] = function OperatorMono (orca, x, y, passive) {
     if (!isNaN(this.listen(this.ports.note))) { return }
 
     const channel = this.listen(this.ports.channel, true)
+    if (channel > 15) { return }
     const octave = this.listen(this.ports.octave, true)
     const note = this.listen(this.ports.note)
     const velocity = this.listen(this.ports.velocity, true)
@@ -663,36 +685,6 @@ library['='] = function OperatorOsc (orca, x, y, passive) {
 
     if (force === true) {
       client.io.osc.run()
-    }
-  }
-}
-
-library['?'] = function OperatorPB (orca, x, y) {
-  Operator.call(this, orca, x, y, '?', true)
-
-  this.name = 'cc'
-  this.info = 'Sends MIDI pitch bend'
-  this.ports.channel = { x: 1, y: 0, clamp: { min: 0, max: 15 } }
-  this.ports.lsb = { x: 2, y: 0, clamp: { min: 0 } }
-  this.ports.msb = { x: 3, y: 0, clamp: { min: 0 } }
-
-  this.operation = function (force = false) {
-    if (!this.hasNeighbor('*') && force === false) { return }
-    if (this.listen(this.ports.channel) === '.') { return }
-    if (this.listen(this.ports.lsb) === '.') { return }
-
-    const channel = this.listen(this.ports.channel, true)
-    const rawlsb = this.listen(this.ports.lsb, true)
-    const lsb = Math.ceil((127 * rawlsb) / 35)
-    const rawmsb = this.listen(this.ports.msb, true)
-    const msb = Math.ceil((127 * rawmsb) / 35)
-
-    client.io.cc.stack.push({ channel, lsb, msb, type: 'pb' })
-
-    this.draw = false
-
-    if (force === true) {
-      client.io.cc.run()
     }
   }
 }

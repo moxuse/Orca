@@ -2,15 +2,19 @@
 
 <img src="https://raw.githubusercontent.com/hundredrabbits/100r.co/master/media/content/characters/orca.hello.png" width="300"/>
 
-Orca is an <strong>esoteric programming language</strong> designed to quickly create procedural sequencers, in which every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame.
+Orca is an [esoteric programming language](https://en.wikipedia.org/wiki/Esoteric_programming_language) designed to quickly create procedural sequencers, in which every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame.
 
-The <a href="http://github.com/hundredrabbits/Orca" target="_blank" rel="noreferrer" class="external ">application</a> <strong>is not a synthesizer, but a flexible livecoding environment</strong> capable of sending MIDI, OSC & UDP to your audio interface, like Ableton, Renoise, VCV Rack or SuperCollider.
+This application **is not a synthesizer, but a flexible livecoding environment** capable of sending MIDI, OSC & UDP to your audio/visual interfaces, like Ableton, Renoise, VCV Rack or SuperCollider.
 
-Learn more by reading the <a href="https://github.com/Hundredrabbits/Orca" target="_blank" rel="noreferrer" class="external ">manual</a>, or have a look at a <a href="https://www.youtube.com/watch?v=RaI_TuISSJE" target="_blank" rel="noreferrer" class="external ">tutorial video</a>. If you need <strong>help</strong>, visit the <a href="https://talk.lurk.org/channel/orca" target="_blank" rel="noreferrer" class="external ">chatroom</a> or the <a href="https://llllllll.co/t/orca-live-coding-tool/17689" target="_blank" rel="noreferrer" class="external ">forum</a>.
+If you need <strong>help</strong>, visit the <a href="https://talk.lurk.org/channel/orca" target="_blank" rel="noreferrer" class="external ">chatroom</a> or the <a href="https://llllllll.co/t/orca-live-coding-tool/17689" target="_blank" rel="noreferrer" class="external ">forum</a>.
+
+- [Download builds](https://hundredrabbits.itch.io/orca), available for **Linux, Windows and OSX**.
+- Use directly [in your browser](https://hundredrabbits.github.io/Orca/), requires **webMidi**.
+- Use on a [raspberry pi](https://github.com/hundredrabbits/orca-c#raspberry-pi).
 
 ## Install & Run
 
-You can download [builds](https://hundredrabbits.itch.io/orca) for **OSX, Windows and Linux**, or if you wish to build it yourself, follow these steps:
+If you wish to use Orca inside of [Electron](https://electronjs.org/), follow these steps:
 
 ```
 git clone https://github.com/hundredrabbits/Orca.git
@@ -23,8 +27,10 @@ npm start
 
 ## Operators
 
+To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
+
 - `A` **add**(*a* b): Outputs sum of inputs.
-- `B` **bounce**(*rate* mod): Outputs values between inputs.
+- `B` **bounce**(*a* b): Outputs difference of inputs.
 - `C` **clock**(*rate* mod): Outputs modulo of frame.
 - `D` **delay**(*rate* mod): Bangs on modulo of frame.
 - `E` **east**: Moves eastward, or bangs.
@@ -34,7 +40,7 @@ npm start
 - `I` **increment**(*step* mod): Increments southward operand.
 - `J` **jumper**(*val*): Outputs northward operand.
 - `K` **konkat**(*len*): Reads multiple variables.
-- `L` **loop**(*step* *len* val): Moves eastward operands.
+- `L` **less**(*a* *b*): Outputs smallest of inputs.
 - `M` **multiply**(*a* b): Outputs product of inputs.
 - `N` **north**: Moves Northward, or bangs.
 - `O` **read**(*x* *y* read): Reads operand with offset.
@@ -60,7 +66,7 @@ npm start
 - `?` **pb**(channel value): Sends MIDI pitch bench.
 - `;` **udp**: Sends UDP message.
 - `=` **osc**(*path*): Sends OSC message.
-- `$` **self**: Sends a [command](#Commands) to itself.
+- `$` **self**: Sends [ORCA command](#Commands).
 
 ## MIDI
 
@@ -112,7 +118,7 @@ For example, `=1abc` will send `10`, `11` and `12` to `/1`, via the port `49162`
 
 Some of Orca's features can be **controlled externally** via UDP though port `49160`, or via its own command-line interface. To activate the command-line prompt, press `CmdOrCtrl+K`. The prompt can also be used to inject patterns or change settings.
 
-### Injection Mode
+### Project Mode
 
 You can **quickly inject orca files** into the currently active file, by using the command-line prompt — Allowing you to navigate across multiple files like you would a project. Press `CmdOrCtrl+L` to load multiple orca files, then press `CmdOrCtrl+B` and type the name of a loaded `.orca` file to inject it.
 
@@ -174,6 +180,14 @@ The midi operator interprets any letter above the chromatic scale as a transpose
 - [Remora](https://github.com/martinberlin/Remora), a ESP32 Led controller firmware.
 
 ## Tutorials
+
+- [Overview](https://www.youtube.com/watch?v=RaI_TuISSJE)
+
+### IO
+
+- [Ableton & Unity3D](https://www.elizasj.com/unity_live_orca/)
+
+### Basics
 
 - [Japanese](https://qiita.com/rucochanman/items/98a4ea988ae99e04b333)
 - [German](http://tropone.de/2019/03/13/orca-ein-sequenzer-der-kryptischer-nicht-aussehen-kann-und-ein-versuch-einer-anleitung/)

@@ -3,7 +3,8 @@
 /* global Blob */
 
 function Clock (client) {
-  const worker = 'onmessage = (e) => { setInterval(() => { postMessage(true) }, e.data)}'
+  const workerScript = 'onmessage = (e) => { setInterval(() => { postMessage(true) }, e.data)}'
+  const worker = window.URL.createObjectURL(new Blob([workerScript], { type: 'text/javascript' }))
 
   this.isPaused = true
   this.timer = null
@@ -12,7 +13,9 @@ function Clock (client) {
   this.speed = { value: 120, target: 120 }
 
   this.start = function () {
-    this.setTimer(120)
+    const memory = parseInt(window.localStorage.getItem('bpm'))
+    const target = memory >= 60 ? memory : 120
+    this.setSpeed(target, target, true)
     this.play()
   }
 
@@ -26,7 +29,8 @@ function Clock (client) {
     this.setSpeed(this.speed.value + (this.speed.value < this.speed.target ? 1 : -1), null, true)
   }
 
-  this.setSpeed = function (value, target = null, setTimer = false) {
+  this.setSpeed = (value, target = null, setTimer = false) => {
+    if (this.speed.value === value && this.speed.target === target && this.timer) { return }
     if (value) { this.speed.value = clamp(value, 60, 300) }
     if (target) { this.speed.target = clamp(target, 60, 300) }
     if (setTimer === true) { this.setTimer(this.speed.value) }
@@ -49,6 +53,7 @@ function Clock (client) {
     } else {
       this.stop(msg)
     }
+    client.update()
   }
 
   this.play = function (msg = false) {
@@ -62,7 +67,7 @@ function Clock (client) {
 
   this.stop = function (msg = false) {
     console.log('Clock', 'Stop')
-    if (this.isPaused === true) { console.warn('Clock', 'Already stopped'); return }
+    if (this.isPaused === true) { return }
     if (this.isPuppet === true) { console.warn('Clock', 'External Midi control'); return }
     this.isPaused = true
     if (msg === true) { client.io.midi.sendClockStop() }
@@ -106,10 +111,11 @@ function Clock (client) {
   // Timer
 
   this.setTimer = function (bpm) {
-    console.log('Clock', 'New Timer ' + bpm + 'bpm')
+    if (bpm < 60) { console.warn('Clock', 'Error ' + bpm); return }
     this.clearTimer()
-    this.timer = new Worker(window.URL.createObjectURL(new Blob([worker], { type: 'text/javascript' })))
-    this.timer.postMessage((60000 / bpm) / 4)
+    window.localStorage.setItem('bpm', bpm)
+    this.timer = new Worker(worker)
+    this.timer.postMessage((60000 / parseInt(bpm)) / 4)
     this.timer.onmessage = (event) => {
       client.io.midi.sendClock()
       client.run()

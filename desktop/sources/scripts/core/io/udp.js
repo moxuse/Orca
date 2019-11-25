@@ -14,7 +14,7 @@ function Udp (client) {
     console.info('UDP', 'Starting..')
 
     this.listener.on('message', (msg, rinfo) => {
-      client.commander.trigger(`${msg}`, false)
+      client.commander.trigger(`${msg}`)
     })
 
     this.listener.on('listening', () => {
@@ -47,6 +47,7 @@ function Udp (client) {
   }
 
   this.play = function (data) {
+    if (!this.socket) { return }
     this.socket.send(Buffer.from(`${data}`), this.port, client.io.ip, (err) => {
       if (err) { console.warn(err) }
     })

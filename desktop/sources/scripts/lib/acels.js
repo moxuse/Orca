@@ -37,10 +37,10 @@ function Acels (client) {
     if ((event.ctrlKey || event.metaKey) && event.shiftKey) {
       return `CmdOrCtrl+Shift+${accelerator}`
     }
-    if (event.shiftKey) {
+    if (event.shiftKey && event.key.toUpperCase() !== event.key) {
       return `Shift+${accelerator}`
     }
-    if (event.altKey) {
+    if (event.altKey && event.key.length !== 1) {
       return `Alt+${accelerator}`
     }
     if (event.ctrlKey || event.metaKey) {
@@ -73,7 +73,7 @@ function Acels (client) {
     for (const cat in cats) {
       text += `\n### ${cat}\n\n`
       for (const item of cats[cat]) {
-        text += item.accelerator ? `- \`${item.accelerator}\`: ${item.info}\n` : ''
+        text += item.accelerator ? `- \`${item.accelerator}\`: ${item.name}\n` : ''
       }
     }
     return text.trim()
